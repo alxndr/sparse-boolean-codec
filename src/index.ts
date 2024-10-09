@@ -14,9 +14,12 @@ export function binaryToBooleans(binary:string):boolean[] {
   return binary.split('').reverse().map((val) => val === ONE, [])
 }
 
+// TODO determine & explain the backwards-ness of the encoded string too...
+
 const ENCODING_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@$'
 const ENCODING_BASE = ENCODING_CHARS.length
 const ENCODING_CHUNK_SIZE = Math.ceil(Math.log2(ENCODING_BASE))
+const ENCODING_CHARS_SPLIT = ENCODING_CHARS.split('')
 
 export function binaryToEncodedString(binary:string):string {
   return binary.split(new RegExp(`(.{${ENCODING_CHUNK_SIZE}})`)).filter(v => v.length).reduce((encoded:string, binaryChunk:string) => {
@@ -33,5 +36,13 @@ export function booleansToEncodedString(bools:boolean[]):string {
 }
 
 export function encodedStringToBinary(encoded:string):string {
-  return encoded
+  // TODO are the reverse()s correct??
+  return encoded.split('').reverse().reduce((acc, encodedLetter) => {
+    const binaryRepresentation = ENCODING_CHARS_SPLIT.indexOf(encodedLetter).toString(2).split('').reverse().join('')
+    return `${acc}${binaryRepresentation}${Array(ENCODING_CHUNK_SIZE - binaryRepresentation.length).fill(0).join('')}` // TODO is this backwards? should acc be after??
+  }, '')
+}
+
+export function encodedStringToBooleans(encoded:string):boolean[] {
+  return binaryToBooleans(encodedStringToBinary(encoded))
 }

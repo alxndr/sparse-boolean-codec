@@ -5,6 +5,9 @@ import {
   binaryToEncodedString,
   booleansToBinary,
   booleansToEncodedString,
+  encodedStringToBinary,
+  // encodedStringToBinary,
+  encodedStringToBooleans,
 } from './encoding'
 
 describe('encoding helpers', () => {
@@ -180,5 +183,66 @@ describe('encoding helpers', () => {
       )
     })
   })
-  describe.skip('encoded to boolean') // TODO
+  describe('encoded to binary', () => {
+    it('turns encoded string to binary string', () => {
+      assert.deepEqual(
+        encodedStringToBinary('0'),
+        '000000'
+      )
+      assert.deepEqual(
+        encodedStringToBinary('1'),
+        '100000'
+      )
+      assert.deepEqual(
+        encodedStringToBinary('10'),
+        '000000100000'
+      )
+      assert.deepEqual(
+        encodedStringToBinary('a'),
+        '010100'
+      )
+      assert.deepEqual(
+        encodedStringToBinary('Z'),
+        '101111'
+      )
+      assert.deepEqual(
+        encodedStringToBinary('$'),
+        '111111'
+      )
+      assert.deepEqual(
+        encodedStringToBinary('01'),
+        '100000000000'
+      )
+      assert.deepEqual(
+        encodedStringToBinary('$1'),
+        '100000111111'
+      )
+    })
+  })
+  describe('encoded to boolean', () => {
+    it('turns encoded string back to (backwards) list of booleans', () => {
+      assert.deepEqual(
+        encodedStringToBooleans('9'),
+        [false, false, true, false, false, true]
+      )
+      assert.deepEqual(
+        encodedStringToBooleans('Z'),
+        [true, true, true, true, false, true]
+      )
+      assert.deepEqual(
+        encodedStringToBooleans('1$'),
+        [
+          false, false, false, false, false, true,
+          true, true, true, true, true, true,
+        ]
+      )
+      assert.deepEqual(
+        encodedStringToBooleans('$1'),
+        [
+          true, true, true, true, true, true,
+          false, false, false, false, false, true,
+        ]
+      )
+    })
+  })
 })
