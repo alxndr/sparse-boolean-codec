@@ -1,13 +1,16 @@
 import {describe, it, assert} from 'vitest'
 
 import {
+  b64ToDecimal,
   binaryToBooleanArray,
   binaryToEncodedString,
   booleansToBinary,
   booleansToEncodedString,
+  compressEncodedString,
+  decimalToB64,
   encodedStringToBinary,
-  // encodedStringToBinary,
   encodedStringToBooleanArray,
+  expandCompression,
 } from './encoding'
 
 describe('encoding helpers', () => {
@@ -335,6 +338,269 @@ describe('encoding helpers', () => {
           true,  false, false, false, false, false,
           false, false, false, false, false, false,
         ]
+      )
+    })
+  })
+
+  describe('compression', () => {
+    describe('compressing', () => {
+      describe('with no repetition', () => {
+        it('returns the input unchanged', () => {
+          assert.equal(
+            compressEncodedString('abc123'),
+            'abc123'
+          )
+          assert.equal(
+            compressEncodedString('abababababab'),
+            'abababababab'
+          )
+        })
+      })
+      describe('with short repetition', () => {
+        it('does not compress', () => {
+          assert.equal(
+            compressEncodedString('1221'),
+            '1221'
+          )
+          assert.equal(
+            compressEncodedString('23332'),
+            '23332'
+          )
+          assert.equal(
+            compressEncodedString('344445'),
+            '344445'
+          )
+        })
+      })
+      describe('with 5 or more repeated chars', () => {
+        it('compresses the string', () => {
+          assert.equal(
+            compressEncodedString('z55555z'),
+            'z5{5}z'
+          )
+          assert.equal(
+            compressEncodedString('aaaaaaa'),
+            'a{7}'
+          )
+          assert.equal(
+            compressEncodedString('0000000000000000000000000000000000000000000000000000000000000000'),
+            '0{10}'
+          )
+        })
+      })
+      describe('with multiple sets of repeated chars', () => {
+        it('compresses them appropriately', () => {
+          assert.equal(
+            compressEncodedString('001111111111100000000000000zzzzzzz10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000044440'),
+            '001{b}0{e}z{7}10{1v}44440'
+          )
+        })
+      })
+    })
+    describe('expanding', () => {
+      describe('with no compression code', () => {
+        it('returns the string as is', () => {
+          assert.equal(
+            expandCompression('abc123'),
+            'abc123'
+          )
+        })
+      })
+      it('works with base-64 repetition', () => {
+        assert.equal(
+          expandCompression('0{1}'),
+          '0'
+        )
+        assert.equal(
+          expandCompression('9{9}'),
+          '999999999'
+        )
+        assert.equal(
+          expandCompression('b{a}'),
+          'bbbbbbbbbb'
+        )
+        assert.equal(
+          expandCompression('1{z}'),
+          '11111111111111111111111111111111111'
+        )
+        assert.equal(
+          expandCompression('a{$}'),
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        )
+        assert.equal(
+          expandCompression('2{13}'),
+          '2222222222222222222222222222222222222222222222222222222222222222222'
+        )
+      })
+      describe('with multiple compression codes', () => {
+        it('is pending...', () => {
+          assert.equal(
+            expandCompression('01{2}345{6}7{8}90{10}'),
+            '011345555557777777790000000000000000000000000000000000000000000000000000000000000000'
+          )
+        })
+      })
+    })
+  })
+
+  describe('b64ToDecimal', () => {
+    it('converts string characters to decimal values', () => {
+      assert.equal(
+        b64ToDecimal('0'),
+        0
+      )
+      assert.equal(
+        b64ToDecimal('1'),
+        1
+      )
+      assert.equal(
+        b64ToDecimal('2'),
+        2
+      )
+      assert.equal(
+        b64ToDecimal('a'),
+        10
+      )
+      assert.equal(
+        b64ToDecimal('z'),
+        35
+      )
+      assert.equal(
+        b64ToDecimal('A'),
+        36
+      )
+      assert.equal(
+        b64ToDecimal('Z'),
+        61
+      )
+      assert.equal(
+        b64ToDecimal('@'),
+        62
+      )
+      assert.equal(
+        b64ToDecimal('$'),
+        63
+      )
+    })
+    it('handles multiple digits', () => {
+      assert.equal(
+        b64ToDecimal('10'),
+        64
+      )
+      assert.equal(
+        b64ToDecimal('11'),
+        65
+      )
+      assert.equal(
+        b64ToDecimal('1$'),
+        127
+      )
+      assert.equal(
+        b64ToDecimal('20'),
+        128
+      )
+      assert.equal(
+        b64ToDecimal('kV'),
+        1337
+      )
+      assert.equal(
+        b64ToDecimal('$$'),
+        4095
+      )
+      assert.equal(
+        b64ToDecimal('100'),
+        4096
+      )
+      assert.equal(
+        b64ToDecimal('111'),
+        4161
+      )
+      assert.equal(
+        b64ToDecimal('bar'),
+        45723
+      )
+      assert.equal(
+        b64ToDecimal('foo'),
+        63000
+      )
+    })
+    describe('with invalid chars', () => {
+      it('throws', () => {
+        assert.throws(() => b64ToDecimal('!'))
+        assert.throws(() => b64ToDecimal('#'))
+        assert.throws(() => b64ToDecimal('.'))
+        assert.throws(() => b64ToDecimal(','))
+        assert.throws(() => b64ToDecimal('?'))
+        assert.throws(() => b64ToDecimal('<'))
+        assert.throws(() => b64ToDecimal('>'))
+        assert.throws(() => b64ToDecimal('{'))
+        assert.throws(() => b64ToDecimal('}'))
+        assert.throws(() => b64ToDecimal('('))
+        assert.throws(() => b64ToDecimal(')'))
+        assert.throws(() => b64ToDecimal('"'))
+        assert.throws(() => b64ToDecimal(`'`))
+        assert.throws(() => b64ToDecimal('`'))
+      })
+    })
+  })
+
+  describe('decimalToB64', () => {
+    it('converts number to base-64 string', () => {
+      assert.equal(
+        decimalToB64(0),
+        '0'
+      )
+      assert.equal(
+        decimalToB64(1),
+        '1'
+      )
+      assert.equal(
+        decimalToB64(2),
+        '2'
+      )
+      assert.equal(
+        decimalToB64(10),
+        'a'
+      )
+      assert.equal(
+        decimalToB64(35),
+        'z'
+      )
+      assert.equal(
+        decimalToB64(36),
+        'A'
+      )
+      assert.equal(
+        decimalToB64(61),
+        'Z'
+      )
+      assert.equal(
+        decimalToB64(62),
+        '@'
+      )
+      assert.equal(
+        decimalToB64(63),
+        '$'
+      )
+      assert.equal(
+        decimalToB64(64),
+        '10'
+      )
+      assert.equal(
+        decimalToB64(130),
+        '22'
+      )
+      assert.equal(
+        decimalToB64(1337),
+        'kV'
+      )
+      assert.equal(
+        decimalToB64(45723),
+        'bar'
+      )
+      assert.equal(
+        decimalToB64(63000),
+        'foo'
       )
     })
   })
