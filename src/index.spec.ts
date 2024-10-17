@@ -1,13 +1,13 @@
 import {describe, it, assert} from 'vitest'
 
 import {
-  binaryToBooleans,
+  binaryToBooleanArray,
   binaryToEncodedString,
   booleansToBinary,
   booleansToEncodedString,
   encodedStringToBinary,
   // encodedStringToBinary,
-  encodedStringToBooleans,
+  encodedStringToBooleanArray,
 } from './encoding'
 
 describe('encoding helpers', () => {
@@ -20,23 +20,23 @@ describe('encoding helpers', () => {
     })
   })
   describe('binary to boolean', () => {
-    it('creates an array of booleans in reverse order of the binary', () => {
+    it('creates an array of booleans in the same order of the binary', () => {
       assert.deepEqual(
-        binaryToBooleans('10'),
-        [false, true]
+        binaryToBooleanArray('10'),
+        [true, false]
       )
       assert.deepEqual(
-        binaryToBooleans('1011'),
-        [true, true, false, true]
+        binaryToBooleanArray('1011'),
+        [true, false, true, true]
       )
       assert.deepEqual(
-        binaryToBooleans('00011'),
-        [true, true, false, false, false]
+        binaryToBooleanArray('00011'),
+        [false, false, false, true, true]
       )
     })
   })
   describe('binary to encoded', () => {
-    it('generates 64-bit encoded representation of binary value', () => {
+    it('generates left-aligned 64-bit encoded representation of binary value', () => {
       assert.deepEqual(
         binaryToEncodedString('0'),
         '0'
@@ -47,10 +47,6 @@ describe('encoding helpers', () => {
       )
       assert.deepEqual(
         binaryToEncodedString('10'),
-        '1'
-      )
-      assert.deepEqual(
-        binaryToEncodedString('01'),
         '2'
       )
       assert.deepEqual(
@@ -58,39 +54,39 @@ describe('encoding helpers', () => {
         '3'
       )
       assert.deepEqual(
-        binaryToEncodedString('011'),
-        '6'
+        binaryToEncodedString('100'),
+        '4'
       )
       assert.deepEqual(
-        binaryToEncodedString('1001'),
-        '9'
+        binaryToEncodedString('101'),
+        '5'
       )
       assert.deepEqual(
-        binaryToEncodedString('0101'),
-        'a'
+        binaryToEncodedString('1000'),
+        '8'
       )
       assert.deepEqual(
-        binaryToEncodedString('000001'),
+        binaryToEncodedString('10000'),
+        'g'
+      )
+      assert.deepEqual(
+        binaryToEncodedString('100000'),
         'w'
       )
       assert.deepEqual(
-        binaryToEncodedString('110001'),
+        binaryToEncodedString('100011'),
         'z'
       )
       assert.deepEqual(
-        binaryToEncodedString('001001'),
+        binaryToEncodedString('100100'),
         'A'
       )
       assert.deepEqual(
-        binaryToEncodedString('000011'),
-        'M'
-      )
-      assert.deepEqual(
-        binaryToEncodedString('101111'),
+        binaryToEncodedString('111101'),
         'Z'
       )
       assert.deepEqual(
-        binaryToEncodedString('011111'),
+        binaryToEncodedString('111110'),
         '@'
       )
       assert.deepEqual(
@@ -98,69 +94,113 @@ describe('encoding helpers', () => {
         '$'
       )
       assert.deepEqual(
-        binaryToEncodedString('0000001'),
-        '01'
+        binaryToEncodedString('1000000'),
+        '10'
       )
       assert.deepEqual(
-        binaryToEncodedString('0000101'),
-        'g1'
+        binaryToEncodedString('1100000'),
+        '1w'
       )
       assert.deepEqual(
-        binaryToEncodedString('0000011'),
-        'w1'
+        binaryToEncodedString('1110000'),
+        '1M'
+      )
+      assert.deepEqual(
+        binaryToEncodedString('1111000'),
+        '1U'
+      )
+      assert.deepEqual(
+        binaryToEncodedString('1111100'),
+        '1Y'
+      )
+      assert.deepEqual(
+        binaryToEncodedString('1111110'),
+        '1@'
       )
       assert.deepEqual(
         binaryToEncodedString('1111111'),
-        '$1'
+        '1$'
       )
       assert.deepEqual(
-        binaryToEncodedString('00000001'),
-        '02'
+        binaryToEncodedString('10000000'),
+        '20'
       )
       assert.deepEqual(
-        binaryToEncodedString('00000101'),
-        'w2'
+        binaryToEncodedString('10111111'),
+        '2$'
       )
       assert.deepEqual(
-        binaryToEncodedString('00000011'),
-        '03'
-      )
-      assert.deepEqual(
-        binaryToEncodedString('00000111'),
-        'w3'
-      )
-      assert.deepEqual(
-        binaryToEncodedString('00001111'),
-        'M3'
+        binaryToEncodedString('11000000'),
+        '30'
       )
       assert.deepEqual(
         binaryToEncodedString('11111111'),
-        '$3'
-      )
-      assert.deepEqual(
-        binaryToEncodedString('000000001'),
-        '04'
+        '3$'
       )
       assert.deepEqual(
         binaryToEncodedString('111111111'),
-        '$7'
+        '7$'
       )
       assert.deepEqual(
         binaryToEncodedString('1111111111'),
-        '$f'
+        'f$'
       )
       assert.deepEqual(
         binaryToEncodedString('11111111111'),
-        '$v'
+        'v$'
       )
       assert.deepEqual(
         binaryToEncodedString('111111111111'),
         '$$'
       )
-      assert.deepEqual(
-        binaryToEncodedString('0000000000001'),
-        '001'
-      )
+    })
+    describe('left zero-padding', () => {
+      it('is preserved in six-character chunks', () => {
+        assert.deepEqual(
+          binaryToEncodedString('01'),
+          '1'
+        )
+        assert.deepEqual(
+          binaryToEncodedString('011'),
+          '3'
+        )
+        assert.deepEqual(
+          binaryToEncodedString('0101'),
+          '5'
+        )
+        assert.deepEqual(
+          binaryToEncodedString('000001'),
+          '1'
+        )
+        assert.deepEqual(
+          binaryToEncodedString('0000001'),
+          '01'
+        )
+        assert.deepEqual(
+          binaryToEncodedString('0000011'),
+          '03'
+        )
+        assert.deepEqual(
+          binaryToEncodedString('0000101'),
+          '05'
+        )
+        assert.deepEqual(
+          binaryToEncodedString('00000001'),
+          '01'
+        )
+        assert.deepEqual(
+          binaryToEncodedString('000000001'),
+          '01'
+        )
+        assert.deepEqual(
+          binaryToEncodedString('0000000000001'),
+          '001'
+        )
+        assert.deepEqual(
+          binaryToEncodedString('0000001000000'),
+          '010'
+        )
+      })
     })
   })
   describe('boolean to encoded', () => {
@@ -179,8 +219,32 @@ describe('encoding helpers', () => {
       )
       assert.deepEqual(
         booleansToEncodedString([true, false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true]),
-        '$0ww'
+        '110$'
       )
+    })
+    describe('extra false at the end', () => {
+      it('does not result in extra zeros at the end of the encoded string', () => {
+        assert.deepEqual(
+          booleansToEncodedString([true, false, true, false, false]),
+          '5'
+        )
+        assert.deepEqual(
+          booleansToEncodedString([true, false, false, false, false, false, true]),
+          '11'
+        )
+        assert.deepEqual(
+          booleansToEncodedString([true, false, false, false, false, false, true, false]),
+          '11'
+        )
+        assert.deepEqual(
+          booleansToEncodedString([true, false, false, false, false, false, true, false, false]),
+          '11'
+        )
+        assert.deepEqual(
+          booleansToEncodedString([true, false, false, false, false, false, true, false, false, false, false, false, false, false, false]),
+          '11'
+        )
+      })
     })
   })
   describe('encoded to binary', () => {
@@ -194,8 +258,8 @@ describe('encoding helpers', () => {
         '100000'
       )
       assert.deepEqual(
-        encodedStringToBinary('10'),
-        '000000100000'
+        encodedStringToBinary('2'),
+        '010000'
       )
       assert.deepEqual(
         encodedStringToBinary('a'),
@@ -211,36 +275,65 @@ describe('encoding helpers', () => {
       )
       assert.deepEqual(
         encodedStringToBinary('01'),
-        '100000000000'
+        '000000100000'
       )
       assert.deepEqual(
         encodedStringToBinary('$1'),
-        '100000111111'
+        '111111100000'
+      )
+    })
+    it('zero-pads on the right-hand side', () => {
+      assert.deepEqual(
+        encodedStringToBinary('10'),
+        '100000000000'
+      )
+      assert.deepEqual(
+        encodedStringToBinary('100'),
+        '100000000000000000'
       )
     })
   })
   describe('encoded to boolean', () => {
-    it('turns encoded string back to (backwards) list of booleans', () => {
+    it('turns encoded string back to (backwards, false-padded) list of booleans', () => {
       assert.deepEqual(
-        encodedStringToBooleans('9'),
-        [false, false, true, false, false, true]
+        encodedStringToBooleanArray('1'),
+        [true, false, false, false, false, false]
       )
       assert.deepEqual(
-        encodedStringToBooleans('Z'),
-        [true, true, true, true, false, true]
+        encodedStringToBooleanArray('9'),
+        [true, false, false, true, false, false]
       )
       assert.deepEqual(
-        encodedStringToBooleans('1$'),
+        encodedStringToBooleanArray('Z'),
+        [true, false, true, true, true, true]
+      )
+      assert.deepEqual(
+        encodedStringToBooleanArray('01'),
         [
-          false, false, false, false, false, true,
-          true, true, true, true, true, true,
+          false, false, false, false, false, false,
+          true,  false, false, false, false, false,
         ]
       )
       assert.deepEqual(
-        encodedStringToBooleans('$1'),
+        encodedStringToBooleanArray('1$'),
         [
-          true, true, true, true, true, true,
-          false, false, false, false, false, true,
+          true, false, false, false, false, false,
+          true,  true,  true,  true,  true,  true,
+        ]
+      )
+      assert.deepEqual(
+        encodedStringToBooleanArray('$1'),
+        [
+          true,  true,  true,  true,  true,  true,
+          true, false, false, false, false, false,
+        ]
+      )
+      assert.deepEqual(
+        encodedStringToBooleanArray('$10'),
+        [
+          true,   true,  true,  true,  true,  true,
+          true,  false, false, false, false, false,
+          false, false, false, false, false, false,
         ]
       )
     })
