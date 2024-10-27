@@ -1,4 +1,6 @@
 // This is a base-64 encoding, with some extras for further compression:
+// * A digit repeated exactly three times can be represented by a single
+//   instance of the digit, followed by a colon.
 // * A digit repeated more than three times and less than 64 times can be
 //   represented by a single instance of the digit, followed by a pipe,
 //   followed by the (base-64) digit representing the total count of the
@@ -7,13 +9,15 @@
 //   of the digit, followed by an open-brace `{`, followed by the (base-64)
 //   digits representing the total count of the repetition, followed by a
 //   close-brace `}`.
-// * Two zeroes can be represented with a hyphen `-` and three zeroes can be
-//   represented by an underscore `_`. This special-casing applies to repeated
-//   zeroes only, because (in this very specific use-case) they are more likely
-//   to be repeated than other digits.
+// * Two zeroes can be represented with a single hyphen `-` (no zeroes) and
+//   three zeroes can be represented by a single underscore `_`. This prefix-
+//   less compression applies to repeated zeroes only, because (in this very
+//   specific use-case) they are more likely to be repeated than other digits.
+
+import {flipString} from './string'
 
 // NOTE:
-// some representations are 'backwards' from the order of booleans...
+// some intermediate representations are 'backwards' from the order of booleans...
 // this allows more zero-values (i.e. un-attended shows) to be added (to the
 // end of the boolean array === the beginning of the binary representation)
 // without modifying the encoded string.
@@ -55,10 +59,6 @@ export function booleansToEncodedString(bools:boolean[]):string {
   return encoded.replace(/0+$/, '')
 }
 
-function flipString(s:string):string {
-  return s.split('').reverse().join('')
-}
-
 export function b64ToDecimal(encodedLetter:string):number {
   if (encodedLetter.length === 1) {
     const value = ENCODING_CHARS_SPLIT.indexOf(encodedLetter)
@@ -74,7 +74,7 @@ export function b64ToDecimal(encodedLetter:string):number {
       0)
 }
 
-const REGEX_ENCODED_COMPRESSION = /(?<digit>[0-9a-z@$])(?<count>\|[0-9a-z@$]|\{[0-9a-z@$]+\})/i
+const REGEX_ENCODED_COMPRESSION = /(?<digit>[0-9a-z@$])(?<count>:|\|[0-9a-z@$]|\{[0-9a-z@$]+\})/i
 
 export function expandCompression(encoded:string):string {
   if (encoded.includes('-')) {
@@ -99,9 +99,11 @@ export function expandCompression(encoded:string):string {
   const {index, groups} = match
   const beforeSequence = encoded.slice(0, index)
   const {digit, count} = groups
-  const countClean = count.replaceAll(/[^0-9a-z@$]/g, '')
-  const expandedDigit = Array(b64ToDecimal(countClean)).fill(digit).join('')
   const afterSequence = encoded.slice(index + count.length + 1)
+  const numberOfRepeatedCharacters = (count === ':')
+    ? 3
+    : b64ToDecimal(count.replaceAll(/[^0-9a-z@$]/g, ''))
+  const expandedDigit = Array(numberOfRepeatedCharacters).fill(digit).join('')
   return `${beforeSequence}${expandedDigit}${expandCompression(afterSequence)}`
 }
 
@@ -111,8 +113,8 @@ export function decimalToB64(n:number):string {
   return `${decimalToB64(Math.floor(n / ENCODING_BASE))}${decimalToB64(n % ENCODING_BASE)}`
 }
 
-const REGEX_REPEATED_DIGITS = /(?<digit>.)(?<repetition>\1{3,})/ // only bother compressing if there are >= 4 in a row, since the shortest compressed sequence will be three characters
-const REGEX_REPEATED_ZEROES = /(?<!0)(?<zeroes>0{2,3})(?!0)/
+const REGEX_REPEATED_DIGITS = /(?<digit>.)(?<repetition>\1{2,})/ // only bother compressing if there are >= 3 in a row
+const REGEX_REPEATED_ZEROES = /(?<!0)(?<zeroes>0{2,3})(?!0)/ // zeroes can be compressed if there are only two repeated, because they are more common
 
 export function compressEncodedString(encoded:string):string {
   const matchZeroesSpecialCase = REGEX_REPEATED_ZEROES.exec(encoded)
@@ -139,6 +141,8 @@ export function compressEncodedString(encoded:string):string {
   const {digit, repetition} = groups
   const numberOfRepeatedCharacters = repetition.length + 1
   const afterRepetition = encoded.slice(index + numberOfRepeatedCharacters)
+  if (numberOfRepeatedCharacters === 3)
+    return `${beforeRepetition}${digit}:${compressEncodedString(afterRepetition)}`
   if (numberOfRepeatedCharacters < 64)
     return `${beforeRepetition}${digit}|${decimalToB64(numberOfRepeatedCharacters)}${compressEncodedString(afterRepetition)}`
   return `${beforeRepetition}${digit}{${decimalToB64(numberOfRepeatedCharacters)}}${compressEncodedString(afterRepetition)}`
