@@ -1,4 +1,18 @@
-// TODO...
+// This is a base-64 encoding, with some extras for further compression:
+// * A digit repeated more than three times and less than 64 times can be
+//   represented by a single instance of the digit, followed by a pipe,
+//   followed by the (base-64) digit representing the total count of the
+//   repetition.
+// * A digit repeated 64 or more times can be represented by a single instance
+//   of the digit, followed by an open-brace `{`, followed by the (base-64)
+//   digits representing the total count of the repetition, followed by a
+//   close-brace `}`.
+// * Two zeroes can be represented with a hyphen `-` and three zeroes can be
+//   represented by an underscore `_`. This special-casing applies to repeated
+//   zeroes only, because (in this very specific use-case) they are more likely
+//   to be repeated than other digits.
+
+// NOTE:
 // some representations are 'backwards' from the order of booleans...
 // this allows more zero-values (i.e. un-attended shows) to be added (to the
 // end of the boolean array === the beginning of the binary representation)
@@ -60,9 +74,21 @@ export function b64ToDecimal(encodedLetter:string):number {
       0)
 }
 
-const REGEX_ENCODED_COMPRESSION = /(?<digit>[0-9a-z@$])\{(?<count>[0-9a-z@$]+)\}/i
+const REGEX_ENCODED_COMPRESSION = /(?<digit>[0-9a-z@$])(?<count>\|[0-9a-z@$]|\{[0-9a-z@$]+\})/i
 
 export function expandCompression(encoded:string):string {
+  if (encoded.includes('-')) {
+    const hyphenPosition = encoded.indexOf('-')
+    const beforeHyphen = encoded.slice(0, hyphenPosition)
+    const afterHyphen = encoded.slice(hyphenPosition + 1)
+    return expandCompression(`${beforeHyphen}00${afterHyphen}`)
+  }
+  if (encoded.includes('_')) {
+    const underscorePosition = encoded.indexOf('_')
+    const beforeUnderscore = encoded.slice(0, underscorePosition)
+    const afterUnderscore = encoded.slice(underscorePosition + 1)
+    return expandCompression(`${beforeUnderscore}000${afterUnderscore}`)
+  }
   if (!REGEX_ENCODED_COMPRESSION.test(encoded))
     return encoded
   const match = REGEX_ENCODED_COMPRESSION.exec(encoded)
@@ -71,14 +97,13 @@ export function expandCompression(encoded:string):string {
     return encoded
   }
   const {index, groups} = match
-  const {digit, count} = groups
   const beforeSequence = encoded.slice(0, index)
-  const expandedDigit = Array(b64ToDecimal(count)).fill(digit).join('')
-  const afterSequence = encoded.slice(index + count.length + 3) // 3 because 2 for the braces and 1 for the slice offset
+  const {digit, count} = groups
+  const countClean = count.replaceAll(/[^0-9a-z@$]/g, '')
+  const expandedDigit = Array(b64ToDecimal(countClean)).fill(digit).join('')
+  const afterSequence = encoded.slice(index + count.length + 1)
   return `${beforeSequence}${expandedDigit}${expandCompression(afterSequence)}`
 }
-
-const REGEX_ENCODED_REPETITION = /(?<digit>.)(?<repetition>\1{4,})/
 
 export function decimalToB64(n:number):string {
   if (n < ENCODING_BASE)
@@ -86,16 +111,37 @@ export function decimalToB64(n:number):string {
   return `${decimalToB64(Math.floor(n / ENCODING_BASE))}${decimalToB64(n % ENCODING_BASE)}`
 }
 
+const REGEX_REPEATED_DIGITS = /(?<digit>.)(?<repetition>\1{3,})/ // only bother compressing if there are >= 4 in a row, since the shortest compressed sequence will be three characters
+const REGEX_REPEATED_ZEROES = /(?<!0)(?<zeroes>0{2,3})(?!0)/
+
 export function compressEncodedString(encoded:string):string {
-  // only bother compressing if there are >= 5 in a row, since the compression itself takes at least 4 chars...
-  const match = REGEX_ENCODED_REPETITION.exec(encoded)
+  const matchZeroesSpecialCase = REGEX_REPEATED_ZEROES.exec(encoded)
+  if (matchZeroesSpecialCase?.groups) {
+    const {index, groups} = matchZeroesSpecialCase
+    const beforeZeroes = encoded.slice(0, index)
+    const {zeroes} = groups
+    const afterZeroes = encoded.slice(index + zeroes.length)
+    return `${
+      compressEncodedString(beforeZeroes)
+    }${
+      zeroes.length === 2
+        ? '-'
+        : '_'
+    }${
+      compressEncodedString(afterZeroes)
+    }`
+  }
+  const match = REGEX_REPEATED_DIGITS.exec(encoded)
   if (!match?.groups)
     return encoded
   const {index, groups} = match
-  const {digit, repetition} = groups
   const beforeRepetition = encoded.slice(0, index)
-  const afterRepetition = encoded.slice(index + repetition.length + 1)
-  return `${beforeRepetition}${digit}{${decimalToB64(repetition.length + 1)}}${compressEncodedString(afterRepetition)}`
+  const {digit, repetition} = groups
+  const numberOfRepeatedCharacters = repetition.length + 1
+  const afterRepetition = encoded.slice(index + numberOfRepeatedCharacters)
+  if (numberOfRepeatedCharacters < 64)
+    return `${beforeRepetition}${digit}|${decimalToB64(numberOfRepeatedCharacters)}${compressEncodedString(afterRepetition)}`
+  return `${beforeRepetition}${digit}{${decimalToB64(numberOfRepeatedCharacters)}}${compressEncodedString(afterRepetition)}`
 }
 
 export function encodedStringToBinary(encoded:string):string {

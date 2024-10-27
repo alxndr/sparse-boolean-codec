@@ -343,7 +343,7 @@ describe('encoding helpers', () => {
   })
 
   describe('compression', () => {
-    describe('compressing', () => {
+    describe('reducing size', () => {
       describe('with no repetition', () => {
         it('returns the input unchanged', () => {
           assert.equal(
@@ -356,7 +356,25 @@ describe('encoding helpers', () => {
           )
         })
       })
-      describe('with short repetition', () => {
+      describe('zeroes special-casing', () => {
+        describe('with three zeroes', () => {
+          it('compresses to an underscore', () => {
+            assert.equal(
+              compressEncodedString('10001'),
+              '1_1'
+            )
+          })
+        })
+        describe('with two zeroes', () => {
+          it('compresses to a hyphen', () => {
+            assert.equal(
+              compressEncodedString('1001'),
+              '1-1'
+            )
+          })
+        })
+      })
+      describe('with short repetition of non-zero digits', () => {
         it('does not compress', () => {
           assert.equal(
             compressEncodedString('1221'),
@@ -366,33 +384,45 @@ describe('encoding helpers', () => {
             compressEncodedString('23332'),
             '23332'
           )
+        })
+      })
+      describe('with 4 to 63 repeated chars', () => {
+        it('compresses the string with a pipe', () => {
           assert.equal(
-            compressEncodedString('344445'),
-            '344445'
+            compressEncodedString('122221'),
+            '12|41'
+          )
+          assert.equal(
+            compressEncodedString('z55555z'),
+            'z5|5z'
+          )
+          assert.equal(
+            compressEncodedString('0000000'),
+            '0|7'
+          )
+          assert.equal( // 63 chars
+            compressEncodedString('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'),
+            'z|$'
           )
         })
       })
-      describe('with 5 or more repeated chars', () => {
-        it('compresses the string', () => {
-          assert.equal(
-            compressEncodedString('z55555z'),
-            'z5{5}z'
-          )
-          assert.equal(
-            compressEncodedString('aaaaaaa'),
-            'a{7}'
-          )
-          assert.equal(
+      describe('with 64 or more repeated digits', () => {
+        it('compresses the string with braces', () => {
+          assert.equal( // 64 chars
             compressEncodedString('0000000000000000000000000000000000000000000000000000000000000000'),
             '0{10}'
+          )
+          assert.equal(
+            compressEncodedString('zXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXz'),
+            'zX{12}z'
           )
         })
       })
       describe('with multiple sets of repeated chars', () => {
         it('compresses them appropriately', () => {
           assert.equal(
-            compressEncodedString('001111111111100000000000000zzzzzzz10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000044440'),
-            '001{b}0{e}z{7}10{1v}44440'
+            compressEncodedString('001111111111100000000000000zzzzzzz00010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000044440'),
+            '-1|b0|ez|7_10{1v}4|40'
           )
         })
       })
@@ -405,6 +435,16 @@ describe('encoding helpers', () => {
             'abc123'
           )
         })
+      })
+      it('works with a colon', () => {
+        assert.equal(
+          expandCompression('1|2'),
+          '11'
+        )
+        assert.equal(
+          expandCompression('3|4'),
+          '3333'
+        )
       })
       it('works with base-64 repetition', () => {
         assert.equal(
@@ -433,10 +473,64 @@ describe('encoding helpers', () => {
         )
       })
       describe('with multiple compression codes', () => {
-        it('is pending...', () => {
+        it('handles them appropriately', () => {
           assert.equal(
             expandCompression('01{2}345{6}7{8}90{10}'),
             '011345555557777777790000000000000000000000000000000000000000000000000000000000000000'
+          )
+        })
+      })
+      describe('zeroes special-casing', () => {
+        describe('a hyphen', () => {
+          it('expands to two zeroes', () => {
+            assert.equal(
+              expandCompression('1-2'),
+              '1002'
+            )
+          })
+          it('still expands other compressions', () => {
+            assert.equal(
+              expandCompression('-3|4-'),
+              '00333300'
+            )
+          })
+        })
+        describe('an underscore', () => {
+          it('expands to three zeroes', () => {
+            assert.equal(
+              expandCompression('1_2'),
+              '10002'
+            )
+          })
+          it('still expands other compressions', () => {
+            assert.equal(
+              expandCompression('1-1_2|5_'),
+              '100100022222000'
+            )
+          })
+        })
+      })
+      describe('with a little bit of everything', () => {
+        it('expands correctly', () => {
+          assert.equal(
+            expandCompression('0|62-2-101_whg8Eg5_M0|4d-w1-2-gw0|72-w-1'),
+            '000000200200101000whg8Eg5000M0000d00w100200gw0000000200w001'
+          )
+        })
+      })
+      describe('with an invalid compression', () => {
+        it('returns the string unchanged', () => {
+          assert.equal(
+            expandCompression('z|'),
+            'z|'
+          )
+          assert.equal(
+            expandCompression('|foo'),
+            '|foo'
+          )
+          assert.equal(
+            expandCompression('bar;baz!'),
+            'bar;baz!'
           )
         })
       })
