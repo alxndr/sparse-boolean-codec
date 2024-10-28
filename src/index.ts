@@ -2,7 +2,7 @@
 // * A digit repeated exactly three times can be represented by a single
 //   instance of the digit, followed by a colon.
 // * A digit repeated more than three times and less than 64 times can be
-//   represented by a single instance of the digit, followed by a pipe,
+//   represented by a single instance of the digit, followed by a period,
 //   followed by the (base-64) digit representing the total count of the
 //   repetition.
 // * A digit repeated 64 or more times can be represented by a single instance
@@ -74,7 +74,7 @@ export function b64ToDecimal(encodedLetter:string):number {
       0)
 }
 
-const REGEX_ENCODED_COMPRESSION = /(?<digit>[0-9a-z@$])(?<count>:|\|[0-9a-z@$]|\{[0-9a-z@$]+\})/i
+const REGEX_ENCODED_COMPRESSION = /(?<digit>[0-9a-z@$])(?<count>:|\.[0-9a-z@$]|\{[0-9a-z@$]+\})/i
 
 export function expandCompression(encoded:string):string {
   if (encoded.includes('-')) {
@@ -144,7 +144,7 @@ export function compressEncodedString(encoded:string):string {
   if (numberOfRepeatedCharacters === 3)
     return `${beforeRepetition}${digit}:${compressEncodedString(afterRepetition)}`
   if (numberOfRepeatedCharacters < 64)
-    return `${beforeRepetition}${digit}|${decimalToB64(numberOfRepeatedCharacters)}${compressEncodedString(afterRepetition)}`
+    return `${beforeRepetition}${digit}.${decimalToB64(numberOfRepeatedCharacters)}${compressEncodedString(afterRepetition)}`
   return `${beforeRepetition}${digit}{${decimalToB64(numberOfRepeatedCharacters)}}${compressEncodedString(afterRepetition)}`
 }
 

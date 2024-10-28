@@ -395,22 +395,22 @@ describe('encoding helpers', () => {
         })
       })
       describe('with 4 to 63 repeated chars', () => {
-        it('compresses the string with a pipe', () => {
+        it('compresses the string with a period', () => {
           assert.equal(
             compressEncodedString('122221'),
-            '12|41'
+            '12.41'
           )
           assert.equal(
             compressEncodedString('z55555z'),
-            'z5|5z'
+            'z5.5z'
           )
           assert.equal(
             compressEncodedString('0000000'),
-            '0|7'
+            '0.7'
           )
           assert.equal( // 63 chars
             compressEncodedString('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz'),
-            'z|$'
+            'z.$'
           )
         })
       })
@@ -438,7 +438,7 @@ describe('encoding helpers', () => {
         it('compresses them appropriately', () => {
           assert.equal(
             compressEncodedString('00111111111112333400000000000000zzzzzzz00010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000044440'),
-            '-1|b23:40|ez|7_10{1v}4|40'
+            '-1.b23:40.ez.7_10{1v}4.40'
           )
         })
       })
@@ -452,13 +452,13 @@ describe('encoding helpers', () => {
           )
         })
       })
-      it('works with a pipe', () => {
+      it('works with a period', () => {
         assert.equal(
-          expandCompression('1|2'),
+          expandCompression('1.2'),
           '11'
         )
         assert.equal(
-          expandCompression('3|4'),
+          expandCompression('3.4'),
           '3333'
         )
       })
@@ -505,7 +505,7 @@ describe('encoding helpers', () => {
             '011345555557777777790000000000000000000000000000000000000000000000000000000000000000'
           )
           assert.equal(
-            expandCompression('0|62-2-101_whg8Eg5_M0|4d-w1-2-gw0|72-w-1'),
+            expandCompression('0.62-2-101_whg8Eg5_M0.4d-w1-2-gw0.72-w-1'),
             '000000200200101000whg8Eg5000M0000d00w100200gw0000000200w001'
           )
         })
@@ -520,7 +520,7 @@ describe('encoding helpers', () => {
           })
           it('still expands other compressions', () => {
             assert.equal(
-              expandCompression('-3|4-'),
+              expandCompression('-3.4-'),
               '00333300'
             )
           })
@@ -534,7 +534,7 @@ describe('encoding helpers', () => {
           })
           it('still expands other compressions', () => {
             assert.equal(
-              expandCompression('1-1_2|53:'),
+              expandCompression('1-1_2.53:'),
               '100100022222333'
             )
           })
@@ -543,7 +543,7 @@ describe('encoding helpers', () => {
       describe('with a little bit of everything', () => {
         it('expands correctly', () => {
           assert.equal(
-            expandCompression('01:2-3|45{67}8|9_a:b|c_'),
+            expandCompression('01:2-3.45{67}8.9_a:b.c_'),
             '011120033335555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555888888888000aaabbbbbbbbbbbb000'
           )
         })
@@ -551,13 +551,13 @@ describe('encoding helpers', () => {
       describe('with an invalid compression', () => {
         it.skip('(SKIPPED: not implemented) throws', () => {
           // this may call for a proper parser...
-          assert.throws(() => expandCompression('1|:4'))
+          assert.throws(() => expandCompression('1.:4'))
           assert.throws(() => expandCompression('2{3'))
-          assert.throws(() => expandCompression('5|6|7'))
-          assert.throws(() => expandCompression('8||9'))
-          assert.throws(() => expandCompression('|foo'))
+          assert.throws(() => expandCompression('5.6.7'))
+          assert.throws(() => expandCompression('8..9'))
+          assert.throws(() => expandCompression('.foo'))
           assert.throws(() => expandCompression('bar;baz'))
-          assert.throws(() => expandCompression('qux|'))
+          assert.throws(() => expandCompression('qux.'))
         })
       })
     })
