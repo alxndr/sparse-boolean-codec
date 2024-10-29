@@ -461,6 +461,14 @@ describe('encoding helpers', () => {
           expandCompression('3.4'),
           '3333'
         )
+        assert.equal(
+          expandCompression('0.za'),
+          '00000000000000000000000000000000000a'
+        )
+        assert.equal(
+          expandCompression('1.Aa'),
+          '111111111111111111111111111111111111a'
+        )
       })
       it('works with a colon', () => {
         assert.equal(

@@ -102,7 +102,7 @@ export function expandCompression(encoded:string):string {
   const afterSequence = encoded.slice(index + count.length + 1)
   const numberOfRepeatedCharacters = (count === ':')
     ? 3
-    : b64ToDecimal(count.replaceAll(/[^0-9a-z@$]/g, ''))
+    : b64ToDecimal(count.replaceAll(/[^0-9a-z@$]/ig, ''))
   const expandedDigit = Array(numberOfRepeatedCharacters).fill(digit).join('')
   return `${beforeSequence}${expandedDigit}${expandCompression(afterSequence)}`
 }
