@@ -560,7 +560,7 @@ describe('encoding helpers', () => {
       })
       describe('with an invalid compression', () => {
         it.skip('(SKIPPED: not implemented) throws', () => {
-          // this may call for a proper parser...
+          // TODO this may call for a proper parser...
           assert.throws(() => expandCompression('1.:4'))
           assert.throws(() => expandCompression('2{3'))
           assert.throws(() => expandCompression('5.6.7'))
