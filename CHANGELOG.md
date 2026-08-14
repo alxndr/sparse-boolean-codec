@@ -36,7 +36,7 @@ versioning follows [SemVer](https://semver.org/).
   Trusted Publishing (OIDC) pipeline end to end and to give the package a
   stable, non-prerelease version other projects can depend on.
 
-## [1.0.0-alpha] - 2026-08-14
+## [1.0.0-alpha] - 2026-08-13
 
 ### Added
 
