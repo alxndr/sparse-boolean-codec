@@ -7,6 +7,10 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Architecture Decision Records
+
 ## [1.0.0-alpha] - 2026-08-14
 
 ### Added

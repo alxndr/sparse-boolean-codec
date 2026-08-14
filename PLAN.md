@@ -125,6 +125,13 @@ wasn't fully confident in.
       `git show --stat` after any multi-path `git add` that mixes deletions
       with modifications).
 - [x] `CHANGELOG.md` (Keep a Changelog format) — done, committed as `12e149a`.
+- [x] Extracted the "Decisions made" above into `docs/architecture-decisions/`
+      (ADRs 000-004: the framework itself, standalone-repo/name/license,
+      preserving extraction behavior, preserving git history, and Trusted
+      Publishing). The "Decisions made" section above is now duplicated by
+      those files; not yet trimmed down here.
+      - [x] look into options to avoid documentation becoming stale, or to encourage
+            an agent to run checks which enforce following decisions?
 - [ ] Configure Trusted Publishing for the package on npmjs.com: org/user
       `alxndr`, repo `sparse-boolean-codec`, workflow filename
       `publish.yml`. (Can only be done after a version exists on the
