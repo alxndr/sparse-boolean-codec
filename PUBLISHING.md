@@ -16,14 +16,26 @@ No npm token lives in this repo or on anyone's laptop; each publish is authentic
    npm version patch   # or: minor / major / prerelease --preid=alpha / 1.2.3
    ```
    This edits `package.json`'s `version`, commits it (`vX.Y.Z`), and creates
-   a matching git tag -- all locally, nothing pushed yet. Amend that commit
-   (`git commit --amend`) to fold in the `CHANGELOG.md` update from step 2,
-   or just commit the changelog separately beforehand -- either way, do it
-   before pushing the tag.
+   a matching git tag -- all locally, nothing pushed yet.
+
+   **A git tag is a fixed pointer to one commit -- it does not move if you
+   later amend that commit.** So finish everything for the release (the
+   `CHANGELOG.md` update from step 2 included) *before* running
+   `npm version`/`git tag`, not after. If something does need fixing
+   afterward and nothing's pushed yet: `git commit --amend`, then
+   re-create the tag (`git tag -d vX.Y.Z && git tag vX.Y.Z`) so it points
+   at the amended commit -- don't just amend and assume the tag followed
+   along. Sanity check before pushing:
+   ```sh
+   git rev-parse HEAD vX.Y.Z   # these two SHAs must match
+   ```
 4. Push the commit and the tag:
    ```sh
    git push && git push --tags
    ```
+   Always use the `v` prefix -- `publish.yml` only triggers on tags
+   matching `v*`. A tag created without it (including via GitHub's web UI,
+   which doesn't enforce the prefix) won't trigger a publish.
 5. The `vX.Y.Z` tag push triggers `publish.yml`, which typechecks, tests,
    builds, and publishes -- watch it at
    https://github.com/alxndr/sparse-boolean-codec/actions.

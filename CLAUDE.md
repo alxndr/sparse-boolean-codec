@@ -15,7 +15,7 @@ If a change would invalidate an existing ADR, say so explicitly and propose a ne
 ## Other docs
 
 - `PLAN.md` -- working status/task list, not a durable record; expect it to change and eventually shrink as things move into ADRs
-- `PUBLISHING.md` -- release process
+- `PUBLISHING.md` -- release process -- follow these steps when publishing a new release
 - `CHANGELOG.md` -- Keep a Changelog format
 - `README.md` -- user-facing docs, including a "gotchas" section on known limitations (some deliberate, per ADR 002)
 
