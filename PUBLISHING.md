@@ -1,29 +1,33 @@
 # publishing
 
-Releases go out via GitHub Actions, using npm's Trusted Publishing (OIDC) --
-see `.github/workflows/publish.yml`. No npm token lives in this repo or on
-anyone's laptop; each publish is authenticated per CI run and tied to this
-exact repo + workflow file.
+Releases go out via GitHub Actions, using npm's Trusted Publishing (OIDC) -- see `.github/workflows/publish.yml`.
+No npm token lives in this repo or on anyone's laptop; each publish is authenticated per CI run and tied to this exact repo + workflow file.
 
 ## normal release
 
 1. Land your changes on `main` -- `.github/workflows/ci.yml` runs
    typecheck/test/build on every push and PR, so `main` should always be in
    a publishable state.
-2. Bump the version and tag it in one step:
+2. Move the `[Unreleased]` entries in `CHANGELOG.md` into a new
+   `[X.Y.Z] - YYYY-MM-DD` section (leave `[Unreleased]` empty at the top
+   for whatever comes next).
+3. Bump the version and tag it in one step:
    ```sh
    npm version patch   # or: minor / major / prerelease --preid=alpha / 1.2.3
    ```
    This edits `package.json`'s `version`, commits it (`vX.Y.Z`), and creates
-   a matching git tag -- all locally, nothing pushed yet.
-3. Push the commit and the tag:
+   a matching git tag -- all locally, nothing pushed yet. Amend that commit
+   (`git commit --amend`) to fold in the `CHANGELOG.md` update from step 2,
+   or just commit the changelog separately beforehand -- either way, do it
+   before pushing the tag.
+4. Push the commit and the tag:
    ```sh
    git push && git push --tags
    ```
-4. The `vX.Y.Z` tag push triggers `publish.yml`, which typechecks, tests,
+5. The `vX.Y.Z` tag push triggers `publish.yml`, which typechecks, tests,
    builds, and publishes -- watch it at
    https://github.com/alxndr/sparse-boolean-codec/actions.
-5. Confirm it's live: `npm view sparse-boolean-codec version`, or check
+6. Confirm it's live: `npm view sparse-boolean-codec version`, or check
    https://www.npmjs.com/package/sparse-boolean-codec.
 
 ## prerelease versions
