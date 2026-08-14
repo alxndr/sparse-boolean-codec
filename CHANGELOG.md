@@ -7,9 +7,19 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-14
+
 ### Added
 
-- Architecture Decision Records
+- Architecture Decision Records in `docs/architecture-decisions/`, and a
+  `CLAUDE.md` tying them into how AI coding agents should work in this repo.
+
+### Changed
+
+- Promoted from `1.0.0-alpha` to a stable release. No functional code
+  changes since the alpha -- this release exists to confirm the npm
+  Trusted Publishing (OIDC) pipeline end to end and to give the package a
+  stable, non-prerelease version other projects can depend on.
 
 ## [1.0.0-alpha] - 2026-08-14
 
@@ -33,3 +43,7 @@ versioning follows [SemVer](https://semver.org/).
 - The `{`/`}` compression markers are outside RFC 3986's
   unreserved/sub-delims character classes -- "URL-friendly," not strictly
   "URL-safe." Also documented in the README.
+
+[Unreleased]: https://github.com/alxndr/sparse-boolean-codec/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/alxndr/sparse-boolean-codec/compare/v1.0.0-alpha...v1.0.0
+[1.0.0-alpha]: https://github.com/alxndr/sparse-boolean-codec/releases/tag/v1.0.0-alpha
