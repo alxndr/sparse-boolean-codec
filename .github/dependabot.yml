@@ -4,7 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    assignees: "@alxndr"
+    assignees: ["@alxndr"]
     cooldown:
       default-days: 5
       semver-major-days: 33
