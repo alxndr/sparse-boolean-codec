@@ -119,11 +119,18 @@ wasn't fully confident in.
       a direct `node -e` smoke test, and `cypress/e2e/stats-page.cy.ts`
       (14 tests, real browser, covers both the checkbox→`?code=` encode
       path and the `?code=`→table decode path) passes against a dev
-      server running the swapped-in import.
+      server running the swapped-in import. Committed in almost-dead-dot-net
+      as `56b541f` (had to `--amend` once after a `git add` mistake staged
+      only the file deletions on the first attempt — worth double-checking
+      `git show --stat` after any multi-path `git add` that mixes deletions
+      with modifications).
+- [x] `CHANGELOG.md` (Keep a Changelog format) — done, committed as `12e149a`.
 - [ ] Configure Trusted Publishing for the package on npmjs.com: org/user
       `alxndr`, repo `sparse-boolean-codec`, workflow filename
       `publish.yml`. (Can only be done after a version exists on the
-      registry, which is now true.)
+      registry, which is now true.) Requires the npmjs.com web UI — not
+      something doable from here; needs the user to do it directly (see
+      PUBLISHING.md's "one-time bootstrap" section for the exact fields).
 - [ ] Publish `1.0.0` for real (see "Publish 1.0.0" below), *then* tackle
       the gotcha-fixes (see "Gotcha-fixes" below) as a `1.1.0` or `2.0.0`
       once the parser rewrite is done — order matters here so that
@@ -133,7 +140,6 @@ wasn't fully confident in.
       `npm version` + push + tag push, confirm `publish.yml` actually
       publishes via OIDC with no local `npm publish` involved. The
       `1.0.0` publish below is a natural point to verify this.
-- [ ] `CHANGELOG.md`.
 
 ## Publish 1.0.0
 
