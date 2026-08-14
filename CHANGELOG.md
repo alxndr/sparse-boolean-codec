@@ -7,6 +7,21 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `expandCompression` (and therefore `compressedAndEncodedStringToBooleanArray`)
+  is now a real left-to-right parser instead of a regex-match-or-pass-through.
+  It throws on structurally malformed compression codes (an unclosed `{`,
+  a `.`/`:` with no preceding digit, an invalid repetition-count character)
+  and, more importantly, on a repetition count outside the range its
+  notation is meant for -- `.` only ever covers 4-63 repeats, `{}` only
+  ever covers 64+. Previously, e.g. `expandCompression('1.2')` silently
+  returned `'11'` instead of throwing; it now throws, since
+  `compressEncodedString` never emits a period-count below 4. This is a
+  breaking change for any caller depending on that leniency (see ADR 002
+  for why the extraction shipped without this fix, and PLAN.md's
+  "Gotcha-fixes" section for the full before/after analysis).
+
 ## [1.0.0] - 2026-08-14
 
 ### Added

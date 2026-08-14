@@ -211,33 +211,33 @@ compression')` block (`1.:4`, `2{3`, `5.6.7`, `8..9`, `.foo`, `bar;baz`,
   with no error raised anywhere.** That's the actual danger -- not the
   obviously-garbled inputs, but plausible-looking corruption.
 
-Plan:
+Plan (all done, on `main`, not yet released):
 
-1. Rewrite `expandCompression` as a real left-to-right parser instead of
-   "regex-match-or-pass-through": at each position, either consume a
-   literal base-64 digit, or consume and validate a full `:`/`.X`/`{X+}`
+1. [x] Rewrote `expandCompression` as a real left-to-right parser instead
+   of "regex-match-or-pass-through": at each position, either consume a
+   literal base-64 digit, the `-`/`_` shorthand, or a full `:`/`.X`/`{X+}`
    code.
-2. Throw a clear `Error` (from `expandCompression` itself, not
-   downstream) for: an unclosed `{`, a `.` or `:` with no preceding valid
-   digit, a count character/sequence that isn't itself valid base-64, and
-   any unconsumed trailing junk.
-3. Enforce the encoder's own invariants on count *values*, since that's
-   the actually-dangerous gap: `.X` must decode to a count in 4–63, `{X}`
-   must decode to a count >=64. Reject anything outside those ranges
-   instead of silently accepting it (e.g. `1.2` should throw, not
-   silently decode as `'11'`).
-4. This implements the seven currently-`it.skip`'d test cases for real,
-   plus new test cases for the count-range gap.
-5. This is a deliberate, intentional behavior change vs. what's live in
-   almost-dead-dot-net today (which is why it happens *after* `1.0.0`
-   ships matching current behavior, not before) -- almost-dead-dot-net's
-   `+page.svelte` already wraps the decode call in a `try`/`catch` and
-   shows an alert on failure, so surfacing more errors here is a strict
-   improvement for that call site, not a breaking UX change.
-6. Version bump for this: at minimum a `minor` (new, stricter validation
-   behavior is user-visible), arguably a `major` under strict semver
-   since previously-non-throwing calls can now throw -- decide which
-   when we get there.
+2. [x] Throws a clear `Error` (from `expandCompression` itself, not
+   downstream) for: an unclosed `{`, an empty `{}`, a `.` or `:` with no
+   preceding valid digit, and a count character/sequence that isn't
+   itself valid base-64. Unconsumed trailing junk can't happen by
+   construction -- the parser always either advances or throws, there's
+   no separate "leftover" state to check.
+3. [x] Enforces the encoder's own invariants on count *values*: `.X` must
+   decode to a count in 4-63, `{X}` must decode to a count >=64 (which,
+   as a side effect, means *any* single-character brace count is now
+   invalid, since one base-64 character maxes out at 63).
+4. [x] Un-skipped the seven original test cases, added boundary tests
+   (exactly 4, exactly 63, exactly 64) and out-of-range tests for both
+   notations, and fixed the handful of existing tests that had been
+   relying on the old leniency (`1.2`, and four of the six
+   `expandCompression('X{n}')` "works with base-64 repetition" cases
+   used single-character -- therefore always <64, therefore now invalid
+   -- brace counts). 41 tests, 0 skipped, all passing.
+5. [x] README's "gotchas" section rewritten to describe the new
+   validation instead of the old gap. CHANGELOG.md has an `[Unreleased]`
+   entry.
+6. [ ] Version bump + release: open question below.
 
 ## Open questions / not yet confirmed with user
 

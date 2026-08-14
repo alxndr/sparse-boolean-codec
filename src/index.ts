@@ -105,47 +105,85 @@ export function b64ToDecimal(encodedLetter: string): number {
       0)
 }
 
-const REGEX_ENCODED_COMPRESSION = /(?<digit>[0-9a-z@$])(?<count>:|\.[0-9a-z@$]|\{[0-9a-z@$]+\})/i
+function isEncodingChar(char: string | undefined): char is string {
+  return char !== undefined && ENCODING_CHARS.includes(char)
+}
 
 /**
  * Expands a run-length-compressed encoded string back to its uncompressed
- * base-64 form.
+ * base-64 form. This is a real left-to-right parser: at each position it
+ * either consumes a literal base-64 character, the `-`/`_` zero-shorthand,
+ * or a full `:`/`.X`/`{X+}` repetition code.
  *
- * KNOWN LIMITATION: malformed compression codes (an unclosed `{`, a bare
- * `.` or `:` with no preceding digit, a double period, etc.) are **not**
- * validated. Depending on the malformed shape, this can silently return the
- * input unchanged or return an incorrect expansion, rather than throwing.
- * See the README "Known limitations" section before feeding it untrusted
- * input.
+ * @throws if the input contains a character outside the base-64 alphabet
+ * (other than the `-`/`_`/`:`/`.`/`{`/`}` compression syntax itself), an
+ * unclosed `{`, a `.` or `:` with no preceding digit, a repetition count
+ * that isn't itself valid base-64, or a repetition count outside the range
+ * its notation is meant for (`.` covers 4-63, `{}` covers 64+ -- see the
+ * module-level comment). This validates the *notation*; it can't detect a
+ * syntactically-valid string that just happens to decode to something
+ * other than what was originally encoded.
  */
 export function expandCompression(encoded: string): string {
-  if (encoded.includes('-')) {
-    const hyphenPosition = encoded.indexOf('-')
-    const beforeHyphen = encoded.slice(0, hyphenPosition)
-    const afterHyphen = encoded.slice(hyphenPosition + 1)
-    return expandCompression(`${beforeHyphen}00${afterHyphen}`)
+  let result = ''
+  let index = 0
+
+  while (index < encoded.length) {
+    const char = encoded[index]
+
+    if (char === '-') {
+      result += '00'
+      index += 1
+      continue
+    }
+    if (char === '_') {
+      result += '000'
+      index += 1
+      continue
+    }
+    if (!isEncodingChar(char))
+      throw new Error(`invalid character at index ${index} in compressed string: ${JSON.stringify(char)}`)
+
+    const next = encoded[index + 1]
+
+    if (next === ':') {
+      result += char.repeat(3)
+      index += 2
+      continue
+    }
+
+    if (next === '.') {
+      const countChar = encoded[index + 2]
+      if (!isEncodingChar(countChar))
+        throw new Error(`missing or invalid repetition count after '.' at index ${index}`)
+      const count = b64ToDecimal(countChar)
+      if (count < 4 || count > 63)
+        throw new Error(`'.' repetition count must be 4-63, got ${count} at index ${index}`)
+      result += char.repeat(count)
+      index += 3
+      continue
+    }
+
+    if (next === '{') {
+      const closeBraceIndex = encoded.indexOf('}', index + 2)
+      if (closeBraceIndex === -1)
+        throw new Error(`unclosed '{' at index ${index + 1}`)
+      const countChars = encoded.slice(index + 2, closeBraceIndex)
+      if (countChars.length === 0 || [...countChars].some((c) => !isEncodingChar(c)))
+        throw new Error(`invalid repetition count in '{}' at index ${index}`)
+      const count = b64ToDecimal(countChars)
+      if (count < 64)
+        throw new Error(`'{}' repetition count must be >= 64, got ${count} at index ${index}`)
+      result += char.repeat(count)
+      index = closeBraceIndex + 1
+      continue
+    }
+
+    result += char
+    index += 1
   }
-  if (encoded.includes('_')) {
-    const underscorePosition = encoded.indexOf('_')
-    const beforeUnderscore = encoded.slice(0, underscorePosition)
-    const afterUnderscore = encoded.slice(underscorePosition + 1)
-    return expandCompression(`${beforeUnderscore}000${afterUnderscore}`)
-  }
-  if (!REGEX_ENCODED_COMPRESSION.test(encoded))
-    return encoded
-  const match = REGEX_ENCODED_COMPRESSION.exec(encoded)
-  if (!match?.groups) {
-    return encoded
-  }
-  const {index, groups} = match
-  const beforeSequence = encoded.slice(0, index)
-  const {digit, count} = groups
-  const afterSequence = encoded.slice(index + count.length + 1)
-  const numberOfRepeatedCharacters = (count === ':')
-    ? 3
-    : b64ToDecimal(count.replaceAll(/[^0-9a-z@$]/ig, ''))
-  const expandedDigit = Array(numberOfRepeatedCharacters).fill(digit).join('')
-  return `${beforeSequence}${expandedDigit}${expandCompression(afterSequence)}`
+
+  return result
 }
 
 /** Converts a non-negative decimal integer to a base-64 string. */

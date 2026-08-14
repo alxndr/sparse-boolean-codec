@@ -78,18 +78,18 @@ Check the JSDoc on each for specifics.
 
 ## gotchas
 
-- **`expandCompression` doesn't validate its input.** It assumes whatever
-  you feed it actually came out of `compressEncodedString`. Give it
-  something malformed -- an unclosed `{`, a stray `.` with nothing before
-  it, a double period -- and depending on exactly how it's malformed, you
-  might get the input back unchanged, or a wrong-but-plausible-looking
-  expansion, instead of an error. `b64ToDecimal` does throw on a single bad
-  character, but that's the only validation anywhere in the decode path. If
-  you're decoding something from outside your control (a URL param, say),
-  wrap it in a `try`/`catch` and don't trust it just because nothing threw.
-  Writing a real parser for the compression grammar would fix this, but I
-  haven't done it -- this extraction is meant to match the behavior of the
-  code that's actually running in production, not improve on it.
+- **`expandCompression` validates the compression grammar, not just the
+  base-64 alphabet.** It throws on an unclosed `{`, a stray `.`/`:` with
+  nothing before it, a repetition count that isn't itself valid base-64,
+  and -- the one that actually matters -- a repetition count outside the
+  range its notation is meant for (`.` only ever means 4-63 repeats, `{}`
+  only ever means 64+; `compressEncodedString` never emits anything
+  outside those ranges, so decoding one that's outside them means the
+  input didn't come from this package, or got corrupted in transit).
+  Still worth wrapping a decode call in `try`/`catch` if the input's
+  coming from outside your control (a URL param, say) -- this makes
+  malformed input reliably throw instead of sometimes silently decoding
+  wrong, it doesn't make decoding infallible.
 - **It's URL-friendly, not URL-safe.** `{` and `}` (the 64+-repeat marker)
   aren't in RFC 3986's unreserved or sub-delims sets. Browsers don't care
   and pass them through a query string unencoded just fine -- that's why

@@ -456,10 +456,6 @@ describe('encoding helpers', () => {
       })
       it('works with a period', () => {
         assert.equal(
-          expandCompression('1.2'),
-          '11'
-        )
-        assert.equal(
           expandCompression('3.4'),
           '3333'
         )
@@ -484,24 +480,8 @@ describe('encoding helpers', () => {
       })
       it('works with base-64 repetition', () => {
         assert.equal(
-          expandCompression('0{1}'),
-          '0'
-        )
-        assert.equal(
-          expandCompression('9{9}'),
-          '999999999'
-        )
-        assert.equal(
-          expandCompression('b{a}'),
-          'bbbbbbbbbb'
-        )
-        assert.equal(
-          expandCompression('1{z}'),
-          '11111111111111111111111111111111111'
-        )
-        assert.equal(
-          expandCompression('a{$}'),
-          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+          expandCompression('1{10}'), // boundary: smallest valid brace count (64)
+          '1'.repeat(64)
         )
         assert.equal(
           expandCompression('2{13}'),
@@ -511,8 +491,8 @@ describe('encoding helpers', () => {
       describe('with multiple compression codes', () => {
         it('handles them appropriately', () => {
           assert.equal(
-            expandCompression('01{2}345{6}7{8}90{10}'),
-            '011345555557777777790000000000000000000000000000000000000000000000000000000000000000'
+            expandCompression('01{10}345{10}7{10}90{10}'),
+            `0${'1'.repeat(64)}34${'5'.repeat(64)}${'7'.repeat(64)}9${'0'.repeat(64)}`
           )
           assert.equal(
             expandCompression('0.62-2-101_whg8Eg5_M0.4d-w1-2-gw0.72-w-1'),
@@ -559,8 +539,7 @@ describe('encoding helpers', () => {
         })
       })
       describe('with an invalid compression', () => {
-        it.skip('(SKIPPED: not implemented) throws', () => {
-          // TODO this may call for a proper parser...
+        it('throws on structurally malformed compression codes', () => {
           assert.throws(() => expandCompression('1.:4'))
           assert.throws(() => expandCompression('2{3'))
           assert.throws(() => expandCompression('5.6.7'))
@@ -568,6 +547,22 @@ describe('encoding helpers', () => {
           assert.throws(() => expandCompression('.foo'))
           assert.throws(() => expandCompression('bar;baz'))
           assert.throws(() => expandCompression('qux.'))
+        })
+        it('throws on an empty brace', () => {
+          assert.throws(() => expandCompression('5{}'))
+        })
+        it('throws on a period repetition count below 4 (only "," and ":" cover 0-3)', () => {
+          assert.throws(() => expandCompression('1.0'))
+          assert.throws(() => expandCompression('1.1'))
+          assert.throws(() => expandCompression('1.2'))
+          assert.throws(() => expandCompression('1.3'))
+        })
+        it('throws on any brace repetition count below 64 (a single base-64 character maxes out at 63)', () => {
+          assert.throws(() => expandCompression('0{1}'))
+          assert.throws(() => expandCompression('9{9}'))
+          assert.throws(() => expandCompression('b{a}'))
+          assert.throws(() => expandCompression('1{z}'))
+          assert.throws(() => expandCompression('a{$}')) // 63 -- one below the boundary
         })
       })
     })
