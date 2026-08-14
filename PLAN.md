@@ -87,21 +87,35 @@ wasn't fully confident in.
       run typecheck + test + build on Node 24.
 - [x] `.github/workflows/publish.yml`: triggered on tag push (`v*`), uses
       `id-token: write` permission, Node 24 (npm requires CLI ≥11.5.1 +
-      Node ≥22.14.0 for OIDC trusted publishing), runs `npm publish` with
-      no token — provenance is automatic under Trusted Publishing. Exact
+      Node ≥22.14.0 for OIDC trusted publishing), publishes with no
+      token — provenance is automatic under Trusted Publishing. Exact
       YAML shape confirmed against npm's own docs
-      (docs.npmjs.com/trusted-publishers).
-- [ ] Create the GitHub repo (`gh repo create alxndr/sparse-boolean-codec`),
-      add the remote, push `main`.
-- [ ] First manual publish: `npm login` (interactive, user must run this
-      themselves) then `npm publish` (also user-run, or explicitly
-      confirmed) to claim the package name and create v1.0.0 on the
-      registry.
+      (docs.npmjs.com/trusted-publishers). Also computes the npm dist-tag
+      from the version string (anything with a `-` publishes under that
+      prerelease identifier instead of `latest`), so a prerelease pushed
+      through this workflow later can't accidentally become the default
+      install target.
+- [x] `PUBLISHING.md`: documents the normal release flow (`npm version` +
+      push + tag push triggers CI), prereleases, and the one-time bootstrap
+      below. Linked from the README's "development" section.
+- [x] Create the GitHub repo. (User created it via the GitHub web UI —
+      `git@github.com:alxndr/sparse-boolean-codec.git` — rather than `gh
+      repo create`.) Remote added, `main` pushed, CI ran and passed on the
+      push (run `31769347100`).
+- [x] First publish will be a **prerelease**, not `1.0.0`: version bumped
+      to `1.0.0-alpha` in `package.json`. `npm publish --dry-run --tag
+      alpha` confirmed the tarball (dist/, README.md, LICENSE,
+      package.json — 6.8 kB) and confirmed it publishes under the `alpha`
+      dist-tag, not `latest`. Actual `npm publish --tag alpha` not yet run
+      — pending final go-ahead.
 - [ ] Configure Trusted Publishing for the package on npmjs.com: org/user
       `alxndr`, repo `sparse-boolean-codec`, workflow filename
-      `publish.yml`.
-- [ ] Verify the CI publish path works (e.g. a follow-up tag push actually
-      publishes via the workflow, not just locally).
+      `publish.yml`. (Can only be done after the prerelease above exists
+      on the registry.)
+- [ ] Verify the CI publish path works: bump to another prerelease (or
+      promote to `1.0.0` once satisfied), `npm version` + push + tag push,
+      confirm `publish.yml` actually publishes via OIDC with no local
+      `npm publish` involved.
 
 ## Open questions / not yet confirmed with user
 

@@ -22,4 +22,15 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - run: npm publish
+      - name: Determine npm dist-tag
+        id: dist-tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *-* ]]; then
+            # e.g. 1.0.0-alpha.2 -> alpha, 2.1.0-rc.0 -> rc
+            TAG=$(node -p "'$VERSION'.split('-')[1].split('.')[0]")
+          else
+            TAG=latest
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - run: npm publish --tag ${{ steps.dist-tag.outputs.tag }}

@@ -110,6 +110,8 @@ npm test
 npm run build
 ```
 
+See [PUBLISHING.md](./PUBLISHING.md) for how releases go out.
+
 
 ## license
 

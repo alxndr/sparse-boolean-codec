@@ -1,7 +1,7 @@
 {
   "name": "sparse-boolean-codec",
-  "version": "1.0.0",
-  "description": "URL-safe, run-length-compressed encoding for a boolean array that can grow (more false values appended) without changing the encoded prefix.",
+  "version": "1.0.0-alpha",
+  "description": "URL-friendly, run-length-compressed encoding for a boolean array that can grow (more false values appended) without changing the encoded prefix.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
