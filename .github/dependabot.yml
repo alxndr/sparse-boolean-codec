@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    assignees: "@alxndr"
+    cooldown:
+      default-days: 5
+      semver-major-days: 33
+      semver-minor-days: 9
+      semver-patch-days: 5
