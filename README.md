@@ -4,14 +4,25 @@
 
 Hand-rolled base-64-plus encoding for a boolean array, with run-length compression.
 
+70 characters are used:
+* numbers 0–9
+* lowercase letters a–z
+* uppercase letters A–Z
+* at-sign `@`
+* dollar-sign `$`
+* hyphen `-`
+* underscore `_`
+* colon `:`
+* period `.`
+* curly braces `{` and `}`
+
 Interesting features:
 * appending more `false`s to the end of the array doesn't change the encoded string
 * tuned for longer sequences of `false`s
 * *mostly* URL-friendly (see the "gotchas" section below)
 
-Characters used: 0–9, a–z, A–Z, at-sign `@`, dollar-sign `$`, hyphen `-`, underscore `_`, colon `:`, period `.`, curly braces `{}` (70 characters total).
-
-The core functionality was hand-written; Claude Code has been used to extract it to a dedicated NPM package (it originally lived in [this webapp](https://gitlab.com/alxndr/almost-dead-dot-net/)).
+The core functionality was dreamed up by a real meat-brain and then hand-written.
+Claude Code has been used to extract it to a dedicated NPM package (it originally lived in [this webapp](https://gitlab.com/alxndr/almost-dead-dot-net/)) and then harden how input is parsed, as well as add documentation.
 
 
 ## usage
@@ -79,11 +90,12 @@ Check the JSDoc on each for specifics.
 ## gotchas
 
 - **`expandCompression` validates the compression grammar, not just the
-  base-64 alphabet.** It throws on an unclosed `{`, a stray `.`/`:` with
-  nothing before it, a repetition count that isn't itself valid base-64,
-  and -- the one that actually matters -- a repetition count outside the
-  range its notation is meant for (`.` only ever means 4-63 repeats, `{}`
-  only ever means 64+; `compressEncodedString` never emits anything
+  base-64 alphabet.** It throws on an unclosed `{`, an empty `{}`, a
+  stray `.`/`:` with nothing before it, a repetition count that's missing
+  or isn't itself valid base-64, and -- the one that actually matters --
+  a repetition count outside the range its notation is meant for (`.`
+  only ever means 4-63 repeats, `{}` only ever means 64+;
+  `compressEncodedString` never emits anything
   outside those ranges, so decoding one that's outside them means the
   input didn't come from this package, or got corrupted in transit).
   Still worth wrapping a decode call in `try`/`catch` if the input's

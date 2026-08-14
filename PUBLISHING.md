@@ -44,17 +44,28 @@ No npm token lives in this repo or on anyone's laptop; each publish is authentic
 
 ## prerelease versions
 
+So far (`1.0.0-alpha`), a single unnumbered prerelease per target version
+has been enough: publish it, get it consumed/verified by a real
+downstream project, then promote to the real release.
+
 ```sh
-npm version prerelease --preid=alpha   # 1.0.0-alpha.0 -> 1.0.0-alpha.1
+npm version X.Y.Z-alpha --no-git-tag-version   # hand-set the exact version
+# ...finish CHANGELOG.md, commit everything together, then tag (see step 3 above)
 git push && git push --tags
 ```
 
+If a target version needs more than one round -- something's found wrong
+with the first alpha and it needs a follow-up before promotion -- number
+them instead of overwriting: `npm version prerelease --preid=alpha` bumps
+`X.Y.Z-alpha.N` iteratively (`.0` -> `.1` -> ...) rather than hand-setting
+the string each time.
+
 `publish.yml` reads the dist-tag off the version string itself: anything
-with a `-` in it (`1.0.0-alpha.0`, `2.0.0-rc.1`, ...) publishes under that
-prerelease identifier as the npm dist-tag (`alpha`, `rc`, ...) instead of
-`latest`. So `npm install sparse-boolean-codec` still gets the last
-non-prerelease version; only `npm install sparse-boolean-codec@alpha` picks
-up a prerelease.
+with a `-` in it (`1.0.0-alpha`, `2.0.0-alpha.1`, ...) publishes under
+that prerelease identifier as the npm dist-tag (`alpha`, `rc`, ...)
+instead of `latest`. So `npm install sparse-boolean-codec` still gets the
+last non-prerelease version; only `npm install sparse-boolean-codec@alpha`
+picks up a prerelease.
 
 ## one-time bootstrap (already done for this package)
 

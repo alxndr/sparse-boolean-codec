@@ -5,22 +5,20 @@ All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+
 ## [Unreleased]
 
 ### Changed
 
-- `expandCompression` (and therefore `compressedAndEncodedStringToBooleanArray`)
-  is now a real left-to-right parser instead of a regex-match-or-pass-through.
-  It throws on structurally malformed compression codes (an unclosed `{`,
-  a `.`/`:` with no preceding digit, an invalid repetition-count character)
-  and, more importantly, on a repetition count outside the range its
-  notation is meant for -- `.` only ever covers 4-63 repeats, `{}` only
-  ever covers 64+. Previously, e.g. `expandCompression('1.2')` silently
-  returned `'11'` instead of throwing; it now throws, since
-  `compressEncodedString` never emits a period-count below 4. This is a
-  breaking change for any caller depending on that leniency (see ADR 002
-  for why the extraction shipped without this fix, and PLAN.md's
-  "Gotcha-fixes" section for the full before/after analysis).
+- replace the recursive/regex implementation in `expandCompression` with a real
+  left-to-right parser using a `while` loop, and `throw` an error if any
+  malformed/invalid input is encountered. (Previously, e.g.
+  `expandCompression('1.2')` silently returned `'11'` instead of throwing; it
+  now throws, since `compressEncodedString` never emits a period-count below 4.)
+  This is a breaking change for any caller depending on that leniency, so the
+  next release will bump the major version to v2. See [ADR 002](./docs/architecture-decisions/002-preserve-extraction-behavior.md)
+  for why the extraction shipped without this fix.
+
 
 ## [1.0.0] - 2026-08-14
 
@@ -35,6 +33,7 @@ versioning follows [SemVer](https://semver.org/).
   changes since the alpha -- this release exists to confirm the npm
   Trusted Publishing (OIDC) pipeline end to end and to give the package a
   stable, non-prerelease version other projects can depend on.
+
 
 ## [1.0.0-alpha] - 2026-08-13
 

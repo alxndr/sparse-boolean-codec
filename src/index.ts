@@ -17,8 +17,7 @@
 //   far more likely to be repeated than other digits.
 //
 // See the README for the full design rationale, the "growable prefix"
-// guarantee, and known limitations (especially around malformed compressed
-// input).
+// guarantee, and remaining known limitations (see the "gotchas" section).
 
 function reverseString(s: string): string {
   return s.split('').reverse().join('')
@@ -29,8 +28,8 @@ function reverseString(s: string): string {
 // booleans... this allows more false values (i.e. bits that are still unset)
 // to be appended to the end of the boolean array -- which becomes the
 // *beginning* of the binary representation -- without modifying the encoded
-// string. See the README section "why is everything reversed?" for the full
-// explanation.
+// string. See the README section "why the growable prefix works" for the
+// full explanation.
 
 const ONE = '1'
 const ZERO = '0'
@@ -60,7 +59,7 @@ export function binaryToEncodedString(binary: string): string {
     .join('')
   const binaryChunks: string[] = `${zeroPadding}${binary}`
     .split(new RegExp(`(.{${ENCODING_CHUNK_SIZE}})`))
-    .filter((v) => v.length) // n.b. this reverses the representation... 0th element of `binary` is last char in `something`
+    .filter((v) => v.length) // n.b. this reverses the representation... 0th element of `binary` is last char in `encoded`
   return binaryChunks.reduce((encoded: string, binaryChunk: string) => {
     const decimalValue: number = binaryChunk
       .split('')
@@ -118,7 +117,8 @@ function isEncodingChar(char: string | undefined): char is string {
  * @throws if the input contains a character outside the base-64 alphabet
  * (other than the `-`/`_`/`:`/`.`/`{`/`}` compression syntax itself), an
  * unclosed `{`, a `.` or `:` with no preceding digit, a repetition count
- * that isn't itself valid base-64, or a repetition count outside the range
+ * that's missing, empty, or isn't itself valid base-64, or a repetition
+ * count outside the range
  * its notation is meant for (`.` covers 4-63, `{}` covers 64+ -- see the
  * module-level comment). This validates the *notation*; it can't detect a
  * syntactically-valid string that just happens to decode to something

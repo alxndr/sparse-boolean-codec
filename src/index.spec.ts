@@ -491,8 +491,8 @@ describe('encoding helpers', () => {
       describe('with multiple compression codes', () => {
         it('handles them appropriately', () => {
           assert.equal(
-            expandCompression('01{10}345{10}7{10}90{10}'),
-            `0${'1'.repeat(64)}34${'5'.repeat(64)}${'7'.repeat(64)}9${'0'.repeat(64)}`
+            expandCompression('0123.45.67.89{10}'),
+            `012333355555577777777${'9'.repeat(64)}`
           )
           assert.equal(
             expandCompression('0.62-2-101_whg8Eg5_M0.4d-w1-2-gw0.72-w-1'),
