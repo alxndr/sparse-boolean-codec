@@ -19,7 +19,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "build": "tsup src/index.ts --format esm,cjs --clean && tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest --run",
     "test:watch": "vitest --watch",

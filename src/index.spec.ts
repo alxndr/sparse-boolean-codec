@@ -13,7 +13,7 @@ import {
   encodedStringToBinary,
   encodedStringToBooleanArray,
   expandCompression,
-} from './encoding'
+} from './index.js'
 
 describe('encoding helpers', () => {
   describe('boolean to binary', () => {

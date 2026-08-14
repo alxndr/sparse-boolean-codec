@@ -55,11 +55,18 @@ wasn't fully confident in.
       export, and the two non-behavioral fixes above.
 - [x] Git history import (see "Decisions made" above) — done and merged in
       as commit `3abee29` on top of the imported history.
-- [ ] Port `src/index.spec.ts`: still has the original `from './encoding'`
-      import (needs to become `from './index'`) and otherwise needs the
-      same read-through/adaptation `src/index.ts` got.
-- [ ] `tsconfig.json`.
-- [ ] `README.md` — thorough documentation:
+- [x] Ported `src/index.spec.ts`: import path fixed to `./index.js`
+      (NodeNext moduleResolution requires the extension). All 37 tests
+      (1 pre-existing `it.skip`) pass unchanged against the ported code.
+- [x] `tsconfig.json` (NodeNext/ES2022, strict). Also added
+      `tsconfig.build.json` (declaration-only build) after discovering
+      tsup's bundled `rollup-plugin-dts` crashes under our TypeScript
+      7.0.2 (`Cannot read properties of undefined (reading
+      'useCaseSensitiveFileNames')`) — `npm run build` now runs
+      `tsup` for JS output and a separate `tsc --project
+      tsconfig.build.json` for `.d.ts` generation instead of tsup's
+      `--dts` flag.
+- [x] `README.md` — thorough documentation:
       - problem statement / use case
       - algorithm walkthrough (binary → base64 chunking → RLE compression),
         including *why* several steps reverse string order (the "growable
@@ -75,14 +82,15 @@ wasn't fully confident in.
         embedding it in a URL. (almost-dead-dot-net's own call site does not
         currently do this — out of scope to fix there as part of this
         extraction, but worth flagging back to the user separately.)
-- [ ] `LICENSE` (MIT).
-- [ ] `.github/workflows/ci.yml`: on push to `main` + PRs targeting `main`,
-      run typecheck + test (+ build, to catch build-only breakage) on
-      Node 24.
-- [ ] `.github/workflows/publish.yml`: triggered on tag push (`v*`), uses
-      `id-token: write` permission, Node 24 (required by npm for OIDC
-      trusted publishing), runs `npm publish` with no token — provenance is
-      automatic under Trusted Publishing.
+- [x] `LICENSE` (MIT).
+- [x] `.github/workflows/ci.yml`: on push to `main` + PRs targeting `main`,
+      run typecheck + test + build on Node 24.
+- [x] `.github/workflows/publish.yml`: triggered on tag push (`v*`), uses
+      `id-token: write` permission, Node 24 (npm requires CLI ≥11.5.1 +
+      Node ≥22.14.0 for OIDC trusted publishing), runs `npm publish` with
+      no token — provenance is automatic under Trusted Publishing. Exact
+      YAML shape confirmed against npm's own docs
+      (docs.npmjs.com/trusted-publishers).
 - [ ] Create the GitHub repo (`gh repo create alxndr/sparse-boolean-codec`),
       add the remote, push `main`.
 - [ ] First manual publish: `npm login` (interactive, user must run this
