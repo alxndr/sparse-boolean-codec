@@ -132,21 +132,43 @@ wasn't fully confident in.
       those files; not yet trimmed down here.
       - [x] look into options to avoid documentation becoming stale, or to encourage
             an agent to run checks which enforce following decisions?
-- [ ] Configure Trusted Publishing for the package on npmjs.com: org/user
+- [x] Configured Trusted Publishing for the package on npmjs.com: org/user
       `alxndr`, repo `sparse-boolean-codec`, workflow filename
-      `publish.yml`. (Can only be done after a version exists on the
-      registry, which is now true.) Requires the npmjs.com web UI — not
-      something doable from here; needs the user to do it directly (see
-      PUBLISHING.md's "one-time bootstrap" section for the exact fields).
-- [ ] Publish `1.0.0` for real (see "Publish 1.0.0" below), *then* tackle
-      the gotcha-fixes (see "Gotcha-fixes" below) as a `1.1.0` or `2.0.0`
-      once the parser rewrite is done — order matters here so that
-      `1.0.0` on the registry matches the behavior that's actually been
-      running in almost-dead-dot-net, before we intentionally change it.
-- [ ] Verify the CI publish path works end-to-end: some version bump via
-      `npm version` + push + tag push, confirm `publish.yml` actually
-      publishes via OIDC with no local `npm publish` involved. The
-      `1.0.0` publish below is a natural point to verify this.
+      `publish.yml`, "Allow `npm publish`" (not stage-publish), Publishing
+      access set to "Require two-factor authentication and disallow bypass
+      2FA tokens" (npmjs.com's own UI confirms this is fully compatible
+      with Trusted Publishing and is the more restrictive/recommended
+      pairing).
+- [x] Published `1.0.0` for real: `npm version 1.0.0` (amended into the
+      release commit `b5bfbc9` once, after adding CHANGELOG.md's
+      comparison links -- see below), tagged `v1.0.0`, pushed. `publish.yml`
+      run `31782088760` succeeded via Trusted Publishing.
+      `npm dist-tag ls sparse-boolean-codec` now shows `latest -> 1.0.0`,
+      `alpha -> 1.0.0-alpha` -- the "latest stuck on the alpha" gotcha
+      from the bootstrap is resolved.
+- [x] Verified the CI publish path end-to-end via the `v1.0.0` tag push
+      above -- real OIDC-authenticated publish, provenance signed and
+      logged to Sigstore's transparency log, no local `npm publish`
+      involved.
+- [x] Tag hygiene, discovered along the way: the alpha never got a git tag
+      at bootstrap time (it was published manually, off the normal
+      `npm version` flow), and when tags were added after the fact by
+      hand, two were created for the same release pointing at *different*
+      commits (`1.0.0-alpha` at the correct commit `0feedc7`, `v1.0.0-alpha`
+      at a later, wrong one, `d89eb2c` -- code was identical between them,
+      only docs differed, but the tag should point at what was actually
+      published). Cleaned up to a single `v1.0.0-alpha` -> `0feedc7`.
+      Repeated the same mistake once more locally with `v1.0.0` itself
+      (tagged before the CHANGELOG.md links were added) and caught it
+      before pushing, by amending and re-tagging. Lesson for next time:
+      finish *all* file changes for a release, including CHANGELOG.md,
+      before running `git tag` -- don't tag until there's nothing left to
+      amend in.
+      Also worth remembering: `publish.yml` only triggers on tags matching
+      `v*` -- a tag created without the `v` prefix (e.g. via GitHub's web
+      UI, which doesn't enforce this) silently won't trigger a publish.
+
+Next: gotcha-fixes (below), targeting `1.1.0` or `2.0.0`.
 
 ## Publish 1.0.0
 
@@ -219,6 +241,4 @@ Plan:
 
 ## Open questions / not yet confirmed with user
 
-- Exact publish trigger for `publish.yml` (tag push assumed; could instead
-  use GitHub Releases as the trigger).
 - Whether the gotcha-fixes version bump should be `minor` or `major`.
