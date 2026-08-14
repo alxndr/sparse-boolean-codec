@@ -1,0 +1,59 @@
+{
+  "name": "sparse-boolean-codec",
+  "version": "1.0.0",
+  "description": "URL-safe, run-length-compressed encoding for a boolean array that can grow (more false values appended) without changing the encoded prefix.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "keywords": [
+    "boolean-array",
+    "bitset",
+    "run-length-encoding",
+    "rle",
+    "base64",
+    "url-safe",
+    "codec",
+    "compression"
+  ],
+  "license": "MIT",
+  "author": "Alexander",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alxndr/sparse-boolean-codec.git"
+  },
+  "homepage": "https://github.com/alxndr/sparse-boolean-codec#readme",
+  "bugs": {
+    "url": "https://github.com/alxndr/sparse-boolean-codec/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "allowScripts": {
+    "esbuild@0.27.7": true
+  }
+}

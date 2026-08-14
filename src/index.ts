@@ -1,4 +1,5 @@
-// This is a base-64 encoding, with some extras for further compression:
+// A base-64 encoding of a boolean array, with a run-length-compression pass
+// on top:
 // * A digit repeated exactly three times can be represented by a single
 //   instance of the digit, followed by a colon.
 // * A digit repeated more than three times and less than 64 times can be
@@ -11,26 +12,37 @@
 //   close-brace `}`.
 // * Two zeroes can be represented with a single hyphen `-` (no zeroes) and
 //   three zeroes can be represented by a single underscore `_`. This prefix-
-//   less compression applies to repeated zeroes only, because (in this very
-//   specific use-case) they are more likely to be repeated than other digits.
+//   less compression applies to repeated zeroes only, because (in the
+//   growable-boolean-array use case this package was built for) zeroes are
+//   far more likely to be repeated than other digits.
+//
+// See the README for the full design rationale, the "growable prefix"
+// guarantee, and known limitations (especially around malformed compressed
+// input).
 
-import {flipString} from './string'
+function reverseString(s: string): string {
+  return s.split('').reverse().join('')
+}
 
 // NOTE:
-// some intermediate representations are 'backwards' from the order of booleans...
-// this allows more zero-values (i.e. un-attended shows) to be added (to the
-// end of the boolean array === the beginning of the binary representation)
-// without modifying the encoded string.
+// some intermediate representations are 'backwards' from the order of
+// booleans... this allows more false values (i.e. bits that are still unset)
+// to be appended to the end of the boolean array -- which becomes the
+// *beginning* of the binary representation -- without modifying the encoded
+// string. See the README section "why is everything reversed?" for the full
+// explanation.
 
 const ONE = '1'
 const ZERO = '0'
 
-export function booleansToBinary(bools:boolean[]):string { // preserves ordering
+/** Converts a boolean array to a binary-digit string, preserving order. */
+export function booleansToBinary(bools: boolean[]): string {
   return bools.reduce((str, bool) => `${bool ? ONE : ZERO}${str}`, '')
 }
 
-export function binaryToBooleanArray(binary:string):boolean[] { // preserves ordering
-  return binary.split('').map((val) => val === ONE, [])
+/** Converts a binary-digit string back to a boolean array, preserving order. */
+export function binaryToBooleanArray(binary: string): boolean[] {
+  return binary.split('').map((val) => val === ONE)
 }
 
 const ENCODING_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@$'
@@ -38,32 +50,51 @@ const ENCODING_BASE = ENCODING_CHARS.length
 const ENCODING_CHUNK_SIZE = Math.ceil(Math.log2(ENCODING_BASE))
 const ENCODING_CHARS_SPLIT = ENCODING_CHARS.split('')
 
-export function binaryToEncodedString(binary:string):string { // reverses order
+/**
+ * Converts a binary-digit string to a base-64 encoded string. Reverses
+ * order (see the module-level NOTE above).
+ */
+export function binaryToEncodedString(binary: string): string {
   const zeroPadding = Array((ENCODING_CHUNK_SIZE - (binary.length % ENCODING_CHUNK_SIZE)) % ENCODING_CHUNK_SIZE)
     .fill(0)
     .join('')
-  const binaryChunks:string[] = `${zeroPadding}${binary}`
+  const binaryChunks: string[] = `${zeroPadding}${binary}`
     .split(new RegExp(`(.{${ENCODING_CHUNK_SIZE}})`))
-    .filter(v => v.length) // n.b. this reverses the representation... 0th element of `binary` is last char in `something`
-  return binaryChunks.reduce((encoded:string, binaryChunk:string) => {
-    const decimalValue:number = binaryChunk.split('').reverse().reduce((decValue, binaryChar, digitIndex) => {
-      return decValue + (binaryChar === ONE ? Math.pow(2, digitIndex) : 0)
-    }, 0)
+    .filter((v) => v.length) // n.b. this reverses the representation... 0th element of `binary` is last char in `something`
+  return binaryChunks.reduce((encoded: string, binaryChunk: string) => {
+    const decimalValue: number = binaryChunk
+      .split('')
+      .reverse()
+      .reduce((decValue, binaryChar, digitIndex) => {
+        return decValue + (binaryChar === ONE ? Math.pow(2, digitIndex) : 0)
+      }, 0)
     return `${encoded}${ENCODING_CHARS[decimalValue]}`
   }, '')
 }
 
-export function booleansToEncodedString(bools:boolean[]):string {
-  const binary:string = booleansToBinary(bools)
-  const encoded:string = flipString(binaryToEncodedString(binary))
+/**
+ * Converts a boolean array directly to a base-64 encoded string (without the
+ * run-length-compression pass). Trailing `false` values are dropped, since
+ * they carry no information -- an absent index decodes back to `false`.
+ */
+export function booleansToEncodedString(bools: boolean[]): string {
+  const binary: string = booleansToBinary(bools)
+  const encoded: string = reverseString(binaryToEncodedString(binary))
   return encoded.replace(/0+$/, '')
 }
 
-export function b64ToDecimal(encodedLetter:string):number {
+/**
+ * Converts a single base-64 character (or a multi-character base-64 string)
+ * to its decimal value.
+ *
+ * @throws if a single character is not one of the 64 valid encoding
+ * characters.
+ */
+export function b64ToDecimal(encodedLetter: string): number {
   if (encodedLetter.length === 1) {
     const value = ENCODING_CHARS_SPLIT.indexOf(encodedLetter)
     if (value === -1) // not in the list of acceptable chars
-      throw new Error(`character is not valid in base-64 encoding: ${value}`)
+      throw new Error(`character is not valid in base-64 encoding: ${encodedLetter}`)
     return value
   }
   return encodedLetter
@@ -76,7 +107,18 @@ export function b64ToDecimal(encodedLetter:string):number {
 
 const REGEX_ENCODED_COMPRESSION = /(?<digit>[0-9a-z@$])(?<count>:|\.[0-9a-z@$]|\{[0-9a-z@$]+\})/i
 
-export function expandCompression(encoded:string):string {
+/**
+ * Expands a run-length-compressed encoded string back to its uncompressed
+ * base-64 form.
+ *
+ * KNOWN LIMITATION: malformed compression codes (an unclosed `{`, a bare
+ * `.` or `:` with no preceding digit, a double period, etc.) are **not**
+ * validated. Depending on the malformed shape, this can silently return the
+ * input unchanged or return an incorrect expansion, rather than throwing.
+ * See the README "Known limitations" section before feeding it untrusted
+ * input.
+ */
+export function expandCompression(encoded: string): string {
   if (encoded.includes('-')) {
     const hyphenPosition = encoded.indexOf('-')
     const beforeHyphen = encoded.slice(0, hyphenPosition)
@@ -93,7 +135,6 @@ export function expandCompression(encoded:string):string {
     return encoded
   const match = REGEX_ENCODED_COMPRESSION.exec(encoded)
   if (!match?.groups) {
-    console.error('this should not happen...', encoded, match)
     return encoded
   }
   const {index, groups} = match
@@ -107,7 +148,8 @@ export function expandCompression(encoded:string):string {
   return `${beforeSequence}${expandedDigit}${expandCompression(afterSequence)}`
 }
 
-export function decimalToB64(n:number):string {
+/** Converts a non-negative decimal integer to a base-64 string. */
+export function decimalToB64(n: number): string {
   if (n < ENCODING_BASE)
     return ENCODING_CHARS[n]
   return `${decimalToB64(Math.floor(n / ENCODING_BASE))}${decimalToB64(n % ENCODING_BASE)}`
@@ -116,7 +158,11 @@ export function decimalToB64(n:number):string {
 const REGEX_REPEATED_DIGITS = /(?<digit>.)(?<repetition>\1{2,})/ // only bother compressing if there are >= 3 in a row
 const REGEX_REPEATED_ZEROES = /(?<!0)(?<zeroes>0{2,3})(?!0)/ // zeroes can be compressed if there are only two repeated, because they are more common
 
-export function compressEncodedString(encoded:string):string {
+/**
+ * Applies the run-length-compression pass to an already base-64-encoded
+ * string (see the module-level comment for the compression rules).
+ */
+export function compressEncodedString(encoded: string): string {
   const matchZeroesSpecialCase = REGEX_REPEATED_ZEROES.exec(encoded)
   if (matchZeroesSpecialCase?.groups) {
     const {index, groups} = matchZeroesSpecialCase
@@ -148,24 +194,35 @@ export function compressEncodedString(encoded:string):string {
   return `${beforeRepetition}${digit}{${decimalToB64(numberOfRepeatedCharacters)}}${compressEncodedString(afterRepetition)}`
 }
 
-export function encodedStringToBinary(encoded:string):string {
+/** Converts an (uncompressed) base-64 encoded string back to a binary-digit string. */
+export function encodedStringToBinary(encoded: string): string {
   return encoded.split('').reverse().reduce((acc, encodedLetter) => {
-    const binaryRepresentation = flipString(b64ToDecimal(encodedLetter).toString(2))
+    const binaryRepresentation = reverseString(b64ToDecimal(encodedLetter).toString(2))
     const zeroPadding = Array(ENCODING_CHUNK_SIZE - binaryRepresentation.length).fill(0).join('')
     return `${binaryRepresentation}${zeroPadding}${acc}`
   }, '')
 }
 
-export function encodedStringToBooleanArray(encoded:string):boolean[] {
+/** Converts an (uncompressed) base-64 encoded string back to a boolean array. */
+export function encodedStringToBooleanArray(encoded: string): boolean[] {
   return binaryToBooleanArray(encodedStringToBinary(encoded))
 }
 
-export function compressedAndEncodedStringToBooleanArray(encoded:string):boolean[] {
+/**
+ * Decodes a run-length-compressed, base-64 encoded string (as produced by
+ * {@link booleanArrayToEncodedAndCompressedString}) back to a boolean array.
+ * This is the primary decode entry point.
+ */
+export function compressedAndEncodedStringToBooleanArray(encoded: string): boolean[] {
   const uncompressed = expandCompression(encoded)
   return encodedStringToBooleanArray(uncompressed)
 }
 
-export function booleanArrayToEncodedAndCompressedString(bools:boolean[]):string {
+/**
+ * Encodes a boolean array to a run-length-compressed, base-64 encoded
+ * string. This is the primary encode entry point.
+ */
+export function booleanArrayToEncodedAndCompressedString(bools: boolean[]): string {
   const encoded = booleansToEncodedString(bools)
   return compressEncodedString(encoded)
 }
