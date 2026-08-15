@@ -10,7 +10,10 @@ No npm token lives in this repo or on anyone's laptop; each publish is authentic
    a publishable state.
 2. Move the `[Unreleased]` entries in `CHANGELOG.md` into a new
    `[X.Y.Z] - YYYY-MM-DD` section (leave `[Unreleased]` empty at the top
-   for whatever comes next).
+   for whatever comes next). **This section's body becomes the GitHub
+   Release notes verbatim** (`scripts/changelog-section.mjs` extracts it in
+   step 5 below) -- write it for that audience, not just as an internal
+   log.
 3. Bump the version and tag it in one step:
    ```sh
    npm version patch   # or: minor / major / prerelease --preid=alpha / 1.2.3
@@ -37,10 +40,14 @@ No npm token lives in this repo or on anyone's laptop; each publish is authentic
    matching `v*`. A tag created without it (including via GitHub's web UI,
    which doesn't enforce the prefix) won't trigger a publish.
 5. The `vX.Y.Z` tag push triggers `publish.yml`, which typechecks, tests,
-   builds, and publishes -- watch it at
-   https://github.com/alxndr/sparse-boolean-codec/actions.
+   builds, publishes to npm, and creates the matching GitHub Release (title
+   and tag both `vX.Y.Z`, notes pulled straight from that version's
+   `CHANGELOG.md` section, marked prerelease/latest based on whether the
+   version string has a `-` in it -- see [ADR 006](./docs/architecture-decisions/006-automate-github-releases.md))
+   -- watch it at https://github.com/alxndr/sparse-boolean-codec/actions.
 6. Confirm it's live: `npm view sparse-boolean-codec version`, or check
-   https://www.npmjs.com/package/sparse-boolean-codec.
+   https://www.npmjs.com/package/sparse-boolean-codec and
+   https://github.com/alxndr/sparse-boolean-codec/releases.
 
 ## prerelease versions
 
