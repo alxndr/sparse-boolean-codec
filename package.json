@@ -21,6 +21,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --clean && tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit",
+    "posttypecheck": "echo Typecheck successful",
     "test": "vitest --run",
     "test:watch": "vitest --watch",
     "prepublishOnly": "npm run typecheck && npm test && npm run build"
