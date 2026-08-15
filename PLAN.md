@@ -6,5 +6,7 @@ Once nothing's left below, this file goes away.
 
 - [x] Review docs/comments for accuracy against the current implementation.
 - [x] Split `src/index.ts` into separate files along natural seams (`binary.ts`, `base64.ts`, `compression.ts`; `index.ts` re-exports the public API and defines the two primary encode/decode functions).
-- [ ] publish `2.0.0-alpha`, then verify that it works with a partner project
+- [x] publish `2.0.0-alpha`, then verify that it works with a partner project
+      (verified via `npm link` against almost-dead-dot-net before publishing;
+      published, live on npm under the `alpha` dist-tag as of 2026-08-15).
 - [ ] publish `2.0.0` once satisfied, following `PUBLISHING.md`
