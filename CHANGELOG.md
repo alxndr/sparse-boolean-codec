@@ -8,6 +8,9 @@ versioning follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
+
+## [2.0.0-alpha] - 2026-08-15
+
 ### Changed
 
 - replace the recursive/regex implementation in `expandCompression` with a real
@@ -15,9 +18,10 @@ versioning follows [SemVer](https://semver.org/).
   malformed/invalid input is encountered. (Previously, e.g.
   `expandCompression('1.2')` silently returned `'11'` instead of throwing; it
   now throws, since `compressEncodedString` never emits a period-count below 4.)
-  This is a breaking change for any caller depending on that leniency, so the
-  next release will bump the major version to v2. See [ADR 002](./docs/architecture-decisions/002-preserve-extraction-behavior.md)
-  for why the extraction shipped without this fix.
+  This is a breaking change for any caller depending on that leniency, so this
+  release bumps the major version to v2. See [ADR 002](./docs/architecture-decisions/002-preserve-extraction-behavior.md)
+  for why the extraction shipped without this fix, and [ADR 005](./docs/architecture-decisions/005-strict-compression-validation.md)
+  for why the fix validates strictly rather than leniently.
 
 
 ## [1.0.0] - 2026-08-14
@@ -58,6 +62,7 @@ versioning follows [SemVer](https://semver.org/).
   unreserved/sub-delims character classes -- "URL-friendly," not strictly
   "URL-safe." Also documented in the README.
 
-[Unreleased]: https://github.com/alxndr/sparse-boolean-codec/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/alxndr/sparse-boolean-codec/compare/v2.0.0-alpha...HEAD
+[2.0.0-alpha]: https://github.com/alxndr/sparse-boolean-codec/compare/v1.0.0...v2.0.0-alpha
 [1.0.0]: https://github.com/alxndr/sparse-boolean-codec/compare/v1.0.0-alpha...v1.0.0
 [1.0.0-alpha]: https://github.com/alxndr/sparse-boolean-codec/releases/tag/v1.0.0-alpha
